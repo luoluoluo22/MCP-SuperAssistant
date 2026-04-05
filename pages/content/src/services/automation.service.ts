@@ -18,6 +18,7 @@ import { useUserPreferences } from '../hooks/useStores';
 import { useCurrentAdapter } from '../hooks/useAdapter';
 import { eventBus } from '../events/event-bus';
 import { createLogger } from '@extension/shared/lib/logger';
+import { traceDebug } from '../utils/debugTrace';
 
 // Store references for accessing state outside React components
 
@@ -288,14 +289,8 @@ export class AutomationService {
       hasResult: !!detail.result,
       isFileAttachment: detail.isFileAttachment,
       fileName: detail.fileName,
-      appliedDelay: delay
+      appliedDelay: delay,
     });
-
-    // Emit event for potential future integrations
-    // eventBus.emit('automation:execute-completed', {
-    //   detail,
-    //   timestamp: Date.now()
-    // });
   }
 
   /**
@@ -509,6 +504,7 @@ export class AutomationService {
       if (automationState) {
         (window as any).__mcpAutomationState = automationState;
         logger.debug('[AutomationService] Exposed automation state to window:', automationState);
+        traceDebug('AutomationService', 'exposeAutomationStateToWindow', automationState);
       }
     } catch (error) {
       logger.error('[AutomationService] Error exposing automation state to window:', error);

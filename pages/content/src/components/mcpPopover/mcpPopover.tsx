@@ -6,6 +6,7 @@ import PopoverPortal from './PopoverPortal';
 import { instructionsState } from '../sidebar/Instructions/InstructionManager';
 import { AutomationService } from '../../services/automation.service';
 import { createLogger } from '@extension/shared/lib/logger';
+import { traceDebug } from '../../utils/debugTrace';
 
 
 const logger = createLogger('mcpPopover');
@@ -759,6 +760,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
       autoExecute: preferences.autoExecute || false,
     };
 
+    traceDebug('MCPPopover', 'syncStateFromPreferences', syncedState);
     setState(syncedState);
 
     // Also sync the legacy toggle state manager
@@ -839,6 +841,10 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
 
   const handleAutoExecute = (checked: boolean) => {
     logger.debug(`Auto Execute toggle changed to: ${checked}`);
+    traceDebug('MCPPopover', 'userToggleAutoExecute', {
+      checked,
+      previousState: state.autoExecute,
+    });
     
     // Update user preferences store
     updatePreferences({ autoExecute: checked });

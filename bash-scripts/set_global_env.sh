@@ -3,6 +3,7 @@
 # Default values
 CLI_CEB_DEV=false
 CLI_CEB_FIREFOX=false
+cli_values=()
 
 validate_is_boolean() {
   if [[ "$1" != "true" && "$1" != "false" ]]; then
@@ -28,8 +29,7 @@ validate_key() {
 }
 
 parse_arguments() {
-  for arg in "$@"
-  do
+  for arg in "$@"; do
     key="${arg%%=*}"
     value="${arg#*=}"
 
@@ -62,9 +62,9 @@ validate_env_keys() {
     if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
       continue
     fi
-    
+
     key="${line%%=*}"
-    
+
     # Only validate CLI_CEB_ and CEB_ keys, allow other keys to exist
     if [[ "$key" =~ ^CLI_CEB_ ]]; then
       validate_key "$key" false
@@ -93,29 +93,24 @@ create_new_file() {
       # Skip CLI-managed section and preserve everything else
       skip_cli_section=false
       while IFS= read -r line; do
-        # Check if we're entering the CLI section
         if [[ "$line" == "# THOSE VALUES ARE EDITABLE ONLY VIA CLI" ]]; then
           skip_cli_section=true
           continue
         fi
-        
-        # Check if we're exiting the CLI section
+
         if [[ "$line" == "# THOSE VALUES ARE EDITABLE" ]]; then
           skip_cli_section=false
           continue
         fi
-        
-        # Skip lines in the CLI section
+
         if [[ "$skip_cli_section" == true ]]; then
           continue
         fi
-        
-        # Skip CLI_CEB_ variables (in case they appear outside the CLI section)
+
         if [[ "$line" =~ ^CLI_CEB_ ]]; then
           continue
         fi
-        
-        # Preserve all other lines (including FIREBASE_, CEB_, comments, empty lines)
+
         echo "$line"
       done < .env
     fi
@@ -124,7 +119,6 @@ create_new_file() {
   mv "$temp_file" .env
 }
 
-# Main script execution
 parse_arguments "$@"
 validate_env_keys
 create_new_file

@@ -13,6 +13,7 @@ import { getPreviousExecution, getPreviousExecutionLegacy, generateContentSignat
 import type { ParamValueElement } from '../core/types';
 import { extractJSONFunctionInfo, extractJSONParameters } from '../parser/jsonFunctionParser';
 import { createLogger } from '@extension/shared/lib/logger';
+import { traceDebug } from '../../../utils/debugTrace';
 
 // Define custom property for tracking scroll state
 
@@ -85,6 +86,7 @@ function getAutomationState() {
   // First try the new store-based state (exposed by automation service)
   const automationState = (window as any).__mcpAutomationState;
   if (automationState) {
+    traceDebug('FunctionBlock', 'readAutomationState.window', automationState);
     return {
       autoInsert: automationState.autoInsert || false,
       autoSubmit: automationState.autoSubmit || false,
@@ -94,6 +96,7 @@ function getAutomationState() {
   
   // Fallback to legacy toggle state
   const legacyState = (window as any).toggleState;
+  traceDebug('FunctionBlock', 'readAutomationState.legacy', legacyState || null);
   return {
     autoInsert: legacyState?.autoInsert === true,
     autoSubmit: legacyState?.autoSubmit === true,
@@ -1078,10 +1081,17 @@ const AutoExecutionUtils = {
       logger.debug(`Auto-execute attempt ${attempts}/${MAX_AUTO_EXECUTE_ATTEMPTS} for block ${blockId}`);
 
       // Get auto execute delay from window state
-      const automationState = (window as any).__mcpAutomationState;
-      const autoExecuteDelay = (automationState?.autoExecuteDelay || 0) * 1000; // Convert to milliseconds
+        const automationState = (window as any).__mcpAutomationState;
+        const autoExecuteDelay = (automationState?.autoExecuteDelay || 0) * 1000; // Convert to milliseconds
 
-      logger.debug(`Using delay of ${autoExecuteDelay}ms for block ${blockId}`);
+        logger.debug(`Using delay of ${autoExecuteDelay}ms for block ${blockId}`);
+        traceDebug('FunctionBlock', 'scheduleAutoExecute', {
+          blockId,
+          functionName: functionDetails.functionName,
+          callId: functionDetails.callId,
+          autoExecuteDelay,
+          attempts,
+        });
 
       PerformanceUtils.setManagedTimeout(
         `auto-exec-${blockId}-${attempts}`,
@@ -1090,6 +1100,12 @@ const AutoExecutionUtils = {
 
           if (!currentBlock) {
             logger.debug(`Auto-execute: Original block ${blockId} not found. Searching for replacement...`);
+            traceDebug('FunctionBlock', 'autoExecuteOriginalBlockMissing', {
+              blockId,
+              functionName: functionDetails.functionName,
+              callId: functionDetails.callId,
+              attempts,
+            });
             currentBlock = AutoExecutionUtils.findReplacementBlock(functionDetails);
           }
 
@@ -1097,6 +1113,12 @@ const AutoExecutionUtils = {
             logger.debug(
               `Auto-execute: Block ${blockId} not found (attempt ${attempts}/${MAX_AUTO_EXECUTE_ATTEMPTS})`,
             );
+            traceDebug('FunctionBlock', 'autoExecuteBlockNotFound', {
+              blockId,
+              functionName: functionDetails.functionName,
+              callId: functionDetails.callId,
+              attempts,
+            });
             if (attempts < MAX_AUTO_EXECUTE_ATTEMPTS) {
               setupAutoExecution();
             } else {
@@ -1113,17 +1135,34 @@ const AutoExecutionUtils = {
           );
           if (finalCheckExecuted) {
             logger.debug(`Auto-execute: Function already executed, skipping.`);
+            traceDebug('FunctionBlock', 'autoExecuteSkipped.alreadyExecuted', {
+              blockId,
+              functionName: functionDetails.functionName,
+              callId: functionDetails.callId,
+            });
             executionTracker.cleanupBlock(blockId);
             return;
           }
 
-          const executeButton = currentBlock.querySelector<HTMLButtonElement>('.execute-button');
-          if (executeButton) {
-            logger.debug(`Auto-execute: Executing function ${functionDetails.functionName}`);
-            executeButton.click();
-            executionTracker.cleanupBlock(blockId);
-          } else {
+            const executeButton = currentBlock.querySelector<HTMLButtonElement>('.execute-button');
+            if (executeButton) {
+              logger.debug(`Auto-execute: Executing function ${functionDetails.functionName}`);
+              traceDebug('FunctionBlock', 'autoExecuteClick', {
+                blockId,
+                functionName: functionDetails.functionName,
+                callId: functionDetails.callId,
+                attempts,
+              });
+              executeButton.click();
+              executionTracker.cleanupBlock(blockId);
+            } else {
             logger.debug(`Auto-execute: Execute button not found (attempt ${attempts}/${MAX_AUTO_EXECUTE_ATTEMPTS})`);
+            traceDebug('FunctionBlock', 'autoExecuteButtonNotFound', {
+              blockId,
+              functionName: functionDetails.functionName,
+              callId: functionDetails.callId,
+              attempts,
+            });
             if (attempts < MAX_AUTO_EXECUTE_ATTEMPTS) {
               setupAutoExecution();
             } else {
@@ -1142,13 +1181,52 @@ const AutoExecutionUtils = {
   findReplacementBlock: (functionDetails: any): HTMLDivElement | null => {
     const potentialBlocks = document.querySelectorAll<HTMLDivElement>('.function-block');
     for (const block of potentialBlocks) {
+      const blockFunctionName = block.getAttribute('data-function-name');
+      const blockCallId = block.getAttribute('data-call-id');
+      const blockContentSignature = block.getAttribute('data-content-signature');
+
+      if (
+        blockFunctionName === functionDetails.functionName &&
+        blockCallId === functionDetails.callId &&
+        (!blockContentSignature || blockContentSignature === functionDetails.contentSignature)
+      ) {
+        traceDebug('FunctionBlock', 'replacementBlockFound', {
+          functionName: functionDetails.functionName,
+          callId: functionDetails.callId,
+          matchedBy: 'data-attributes',
+        });
+        return block;
+      }
+
       const preElement = block.querySelector('pre');
-      if (!preElement?.textContent) continue;
+      if (!preElement?.textContent) {
+        const nameText = block.querySelector('.function-name-text')?.textContent?.trim();
+        const callIdText = block.querySelector('.call-id')?.textContent?.trim();
 
-      const match = REGEX_CACHE.invokeMatch.exec(preElement.textContent);
+        if (nameText === functionDetails.functionName && callIdText === functionDetails.callId) {
+          traceDebug('FunctionBlock', 'replacementBlockFound', {
+            functionName: functionDetails.functionName,
+            callId: functionDetails.callId,
+            matchedBy: 'header-text',
+          });
+          return block;
+        }
+
+        continue;
+      }
+
+      const rawText = preElement.textContent;
+      const match = REGEX_CACHE.invokeMatch.exec(rawText);
       REGEX_CACHE.invokeMatch.lastIndex = 0;
+      const jsonInfo = extractJSONFunctionInfo(rawText);
 
-      if (match && match[1] === functionDetails.functionName && match[2] === functionDetails.callId) {
+      const isXmlMatch = !!(match && match[1] === functionDetails.functionName && match[2] === functionDetails.callId);
+      const isJsonMatch =
+        jsonInfo.invokeName === functionDetails.functionName &&
+        jsonInfo.callId === functionDetails.callId &&
+        jsonInfo.isComplete === true;
+
+      if (isXmlMatch || isJsonMatch) {
         const alreadyExecuted = getPreviousExecution(
           functionDetails.functionName,
           functionDetails.callId,
@@ -1157,6 +1235,11 @@ const AutoExecutionUtils = {
 
         if (!alreadyExecuted) {
           logger.debug(`Auto-execute: Found replacement block, attempting execution.`);
+          traceDebug('FunctionBlock', 'replacementBlockFound', {
+            functionName: functionDetails.functionName,
+            callId: functionDetails.callId,
+            matchedBy: isJsonMatch ? 'json' : 'xml',
+          });
           return block;
         }
       }
@@ -1467,6 +1550,12 @@ export const renderFunctionCall = (block: HTMLPreElement, isProcessingRef: { cur
     contentSignature = generateContentSignature(functionName, completeParameters);
   }
 
+  blockDiv.setAttribute('data-function-name', functionName);
+  blockDiv.setAttribute('data-call-id', callId);
+  if (contentSignature) {
+    blockDiv.setAttribute('data-content-signature', contentSignature);
+  }
+
   // Replace original element on new render
   if (isNewRender) {
     if (block.parentNode) {
@@ -1506,13 +1595,19 @@ export const renderFunctionCall = (block: HTMLPreElement, isProcessingRef: { cur
       addExecuteButton(buttonContainer!, rawContent);
 
       // Setup auto-execution
-      const automationState = getAutomationState();
-      const autoExecuteEnabled = automationState.autoExecute;
-      if (contentSignature && !executionTracker.isFunctionExecuted(callId, contentSignature, functionName)) {
-        if (autoExecuteEnabled !== true) {
-          logger.debug(`Auto-execution disabled by user settings for block ${blockId} (${functionName})`);
-          return true;
-        }
+        const automationState = getAutomationState();
+        const autoExecuteEnabled = automationState.autoExecute;
+        if (contentSignature && !executionTracker.isFunctionExecuted(callId, contentSignature, functionName)) {
+          if (autoExecuteEnabled !== true) {
+            logger.debug(`Auto-execution disabled by user settings for block ${blockId} (${functionName})`);
+            traceDebug('FunctionBlock', 'autoExecuteSkipped.disabled', {
+              blockId,
+              functionName,
+              callId,
+              automationState,
+            });
+            return true;
+          }
 
         if (executionTracker.isBlockExecuted(blockId) === true) {
           logger.debug(`Auto-execution skipped: Block ${blockId} (${functionName}) has already been processed`);
@@ -1524,16 +1619,23 @@ export const renderFunctionCall = (block: HTMLPreElement, isProcessingRef: { cur
 
         logger.debug(`Setting up auto-execution for block ${blockId} (${functionName})`);
 
-        const functionDetails = {
-          functionName,
-          callId,
-          contentSignature,
-          params: completeParameters || {},
-        };
+          const functionDetails = {
+            functionName,
+            callId,
+            contentSignature,
+            params: completeParameters || {},
+          };
 
-        AutoExecutionUtils.setupOptimizedAutoExecution(blockId, functionDetails);
+          traceDebug('FunctionBlock', 'autoExecuteReady', {
+            blockId,
+            functionName,
+            callId,
+            contentSignature,
+            params: completeParameters || {},
+          });
+          AutoExecutionUtils.setupOptimizedAutoExecution(blockId, functionDetails);
+        }
       }
-    }
   }
 
   return true;

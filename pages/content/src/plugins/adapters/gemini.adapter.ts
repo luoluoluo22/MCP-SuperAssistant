@@ -2,6 +2,7 @@ import { BaseAdapterPlugin } from './base.adapter';
 import type { AdapterCapability, PluginContext } from '../plugin-types';
 import { adapterConfigManager, type AdapterConfig } from './defaultConfigs';
 import { createLogger } from '@extension/shared/lib/logger';
+import { traceDebug } from '../../utils/debugTrace';
 
 /**
  * Gemini Adapter for Google Gemini (gemini.google.com)
@@ -1053,15 +1054,25 @@ export class GeminiAdapter extends BaseAdapterPlugin {
           
           // Get the persistent MCP enabled state and other preferences
           const mcpEnabled = uiState?.mcpEnabled ?? false;
+          const autoInsertEnabled = uiState?.preferences?.autoInsert ?? false;
           const autoSubmitEnabled = uiState?.preferences?.autoSubmit ?? false;
+          const autoExecuteEnabled = uiState?.preferences?.autoExecute ?? false;
 
-          context.logger.debug(`Getting MCP toggle state: mcpEnabled=${mcpEnabled}, autoSubmit=${autoSubmitEnabled}`);
+          context.logger.debug(
+            `Getting MCP toggle state: mcpEnabled=${mcpEnabled}, autoInsert=${autoInsertEnabled}, autoSubmit=${autoSubmitEnabled}, autoExecute=${autoExecuteEnabled}`,
+          );
+          traceDebug('GeminiAdapter', 'getToggleState', {
+            mcpEnabled,
+            autoInsertEnabled,
+            autoSubmitEnabled,
+            autoExecuteEnabled,
+          });
 
           return {
             mcpEnabled: mcpEnabled, // Use the persistent MCP state
-            autoInsert: autoSubmitEnabled,
+            autoInsert: autoInsertEnabled,
             autoSubmit: autoSubmitEnabled,
-            autoExecute: false // Default for now, can be extended
+            autoExecute: autoExecuteEnabled,
           };
         } catch (error) {
           context.logger.error('Error getting toggle state:', error);
@@ -1124,7 +1135,7 @@ export class GeminiAdapter extends BaseAdapterPlugin {
 
         // Update preferences through store
         if (context.stores.ui?.updatePreferences) {
-          context.stores.ui.updatePreferences({ autoSubmit: enabled });
+          context.stores.ui.updatePreferences({ autoInsert: enabled });
         }
 
         stateManager.updateUI();
@@ -1143,7 +1154,12 @@ export class GeminiAdapter extends BaseAdapterPlugin {
 
       setAutoExecute: (enabled: boolean) => {
         context.logger.debug(`Setting Auto Execute ${enabled ? 'enabled' : 'disabled'}`);
-        // Can be extended to handle auto execute functionality
+        traceDebug('GeminiAdapter', 'setAutoExecute', { enabled });
+
+        if (context.stores.ui?.updatePreferences) {
+          context.stores.ui.updatePreferences({ autoExecute: enabled });
+        }
+
         stateManager.updateUI();
       },
 

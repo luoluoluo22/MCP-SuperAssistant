@@ -6,6 +6,7 @@ import { storeExecutedFunction, generateContentSignature } from '../mcpexecute/s
 import { checkAndDisplayFunctionHistory, createHistoryPanel, updateHistoryPanel } from './functionHistory';
 import { extractJSONParameters, stripLanguageTags, extractCleanContent } from '../parser/jsonFunctionParser';
 import { createLogger } from '@extension/shared/lib/logger';
+import { traceDebug } from '../../../utils/debugTrace';
 
 // Add type declarations for the global adapter and mcpClient access
 
@@ -694,6 +695,7 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
 
   // Optimized click handler with better performance and mcpClient integration
   executeButton.onclick = async () => {
+    traceDebug('ExecuteButton', 'clickStart', { functionName, callId, parameters });
     // Batch button state changes
     executeButton.disabled = true;
     buttonText.style.display = 'none';
@@ -730,6 +732,7 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
       const mcpClient = (window as any).mcpClient;
 
       if (!mcpClient) {
+        traceDebug('ExecuteButton', 'missingMcpClient', { functionName, callId });
         resetButtonState();
         displayResult(resultsPanel, loadingIndicator, false, 'Error: mcpClient not found');
         resultsPanel.style.display = 'block';
@@ -738,6 +741,7 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
 
       // Check if mcpClient is ready
       if (!mcpClient.isReady || !mcpClient.isReady()) {
+        traceDebug('ExecuteButton', 'mcpClientNotReady', { functionName, callId });
         resetButtonState();
         displayResult(resultsPanel, loadingIndicator, false, 'Error: MCP client not ready');
         resultsPanel.style.display = 'block';
@@ -753,7 +757,13 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
 
       // Call tool using the new mcpClient async API
       try {
+        traceDebug('ExecuteButton', 'callToolStart', { functionName, callId, parameters });
         const result = await mcpClient.callTool(functionName, parameters);
+        traceDebug('ExecuteButton', 'callToolSuccess', {
+          functionName,
+          callId,
+          hasResult: !!result,
+        });
 
         resetButtonState();
         displayResult(resultsPanel, loadingIndicator, true, result);
@@ -767,6 +777,7 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
         updateHistoryPanel(historyPanel, executionData, mcpClient);
 
       } catch (toolError: any) {
+        traceDebug('ExecuteButton', 'callToolError', { functionName, callId, toolError });
         resetButtonState();
 
         // Enhanced error handling for connection issues
@@ -785,6 +796,7 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
       }
 
     } catch (error: any) {
+      traceDebug('ExecuteButton', 'unexpectedError', { functionName, callId, error });
       resetButtonState();
       resultsPanel.style.display = 'block';
 
