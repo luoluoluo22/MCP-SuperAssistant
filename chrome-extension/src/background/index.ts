@@ -42,9 +42,9 @@ import { createLogger } from '@extension/shared/lib/logger';
 
 const logger = createLogger('BACKGROUND');
 
-const DEFAULT_SSE_URL = 'http://localhost:3006/sse';
-const DEFAULT_WEBSOCKET_URL = 'ws://localhost:3006/message';
-const DEFAULT_STREAMABLE_HTTP_URL = 'http://localhost:3006';
+const DEFAULT_SSE_URL = process.env.CEB_DEFAULT_SSE_URL || 'http://localhost:3006/sse';
+const DEFAULT_WEBSOCKET_URL = process.env.CEB_DEFAULT_WEBSOCKET_URL || 'ws://localhost:3006/message';
+const DEFAULT_STREAMABLE_HTTP_URL = process.env.CEB_DEFAULT_STREAMABLE_HTTP_URL || 'http://localhost:3006';
 
 // Connection type management
 type ConnectionType = TransportType;
@@ -164,6 +164,8 @@ function decrementConnectionCount(): void {
 let isConnecting = false;
 let connectionAttemptCount = 0;
 const MAX_CONNECTION_ATTEMPTS = 3;
+let lastHeartbeatReconnectAt = 0;
+const HEARTBEAT_RECONNECT_COOLDOWN = 15000;
 
 /**
  * Enhanced error categorization for better tool vs connection error distinction
@@ -384,6 +386,23 @@ async function tryConnectToServer(uri: string, type: ConnectionType = connection
     if (connectionAttemptCount >= MAX_CONNECTION_ATTEMPTS) {
       isConnecting = false;
     }
+  }
+}
+
+async function triggerReconnectFromHeartbeat(reason: string): Promise<void> {
+  const now = Date.now();
+  if (isConnecting || now - lastHeartbeatReconnectAt < HEARTBEAT_RECONNECT_COOLDOWN) {
+    return;
+  }
+
+  lastHeartbeatReconnectAt = now;
+  logger.debug(`[Background] Heartbeat-triggered reconnect requested: ${reason}`);
+
+  try {
+    connectionAttemptCount = 0;
+    await tryConnectToServer(getServerUrl(), connectionType);
+  } catch (error) {
+    logger.warn('[Background] Heartbeat-triggered reconnect failed:', error);
   }
 }
 
@@ -906,7 +925,15 @@ async function handleMcpMessage(
       case 'mcp:heartbeat': {
         // Handle heartbeat from content script
         const { timestamp } = payload;
-        const isConnected = isMcpServerConnected();
+        const storedConnected = isMcpServerConnected();
+        const actualConnected = await checkMcpServerConnection();
+        const isConnected = storedConnected && actualConnected;
+
+        if (!isConnected) {
+          updateConnectionStatus(false);
+          broadcastConnectionStatusToContentScripts(false, 'Heartbeat detected disconnected MCP session');
+          void triggerReconnectFromHeartbeat('heartbeat-detected-disconnect');
+        }
         
         result = {
           timestamp: Date.now(),

@@ -31,6 +31,7 @@ const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']; // Define the cycle or
 
 // Define a constant for minimized width (should match BaseSidebarManager and CSS logic)
 const SIDEBAR_MINIMIZED_WIDTH = 56;
+const SIDEBAR_MINIMIZED_WIDTH_MOBILE = 44;
 const SIDEBAR_DEFAULT_WIDTH = 320;
 
 interface SidebarProps {
@@ -38,6 +39,10 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
+  const getMinimizedWidth = useCallback(
+    () => (window.innerWidth <= 768 ? SIDEBAR_MINIMIZED_WIDTH_MOBILE : SIDEBAR_MINIMIZED_WIDTH),
+    [],
+  );
   // Add unique ID to track component instances
   const componentId = useRef(`sidebar-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
   logMessage(
@@ -262,6 +267,8 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
   // Use store values with fallbacks to initial preferences
   const isMinimized = storeSidebarMinimized ?? (initialPreferences?.isMinimized ?? false);
   const sidebarWidth = storeSidebarWidth || initialPreferences?.sidebarWidth || SIDEBAR_DEFAULT_WIDTH;
+  const minimizedWidth = getMinimizedWidth();
+  const isMobileCollapsed = isMinimized && window.innerWidth <= 768;
   const isPushMode = preferences.isPushMode ?? initialPreferences?.isPushMode ?? false;
   const autoSubmit = preferences.autoSubmit ?? initialPreferences?.autoSubmit ?? false;
 
@@ -301,6 +308,19 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
     logMessage(`[Sidebar] activeSidebarManager not available after ${maxRetries} attempts`);
     return null;
   }, []);
+
+  useEffect(() => {
+    const syncHostFrame = async () => {
+      const sidebarManager = await waitForSidebarManager(5, 50);
+      if (!sidebarManager || typeof sidebarManager.updateHostFrame !== 'function') {
+        return;
+      }
+
+      sidebarManager.updateHostFrame(isMinimized, sidebarWidth);
+    };
+
+    syncHostFrame();
+  }, [isMinimized, sidebarWidth, waitForSidebarManager]);
 
   // --- Theme Application Logic ---
   const applyTheme = useCallback(async (selectedTheme: Theme) => {
@@ -419,11 +439,11 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
               logMessage(
                 `[Sidebar] Applying push mode (${isPushMode}, minimized: ${isMinimized}) and width (${sidebarWidth})`
               );
-              sidebarManager.setPushContentMode(
-                isPushMode,
-                isMinimized ? SIDEBAR_MINIMIZED_WIDTH : sidebarWidth,
-                isMinimized,
-              );
+                sidebarManager.setPushContentMode(
+                  isPushMode,
+                isMinimized ? minimizedWidth : sidebarWidth,
+                  isMinimized,
+                );
             } else {
               // Ensure push mode is disabled when sidebar is hidden
               logMessage('[Sidebar] Disabling push mode - sidebar not visible');
@@ -634,6 +654,36 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
     }
   };
 
+  if (isMobileCollapsed) {
+    return (
+      <div
+        ref={sidebarRef}
+        className={cn(
+          'fixed z-50 sidebar',
+          isTransitioning ? 'sidebar-transitioning' : '',
+        )}
+        style={{
+          width: `${minimizedWidth}px`,
+          height: '52px',
+          top: 'calc(50vh - 26px)',
+          right: '10px',
+          borderRadius: '999px',
+          overflow: 'hidden',
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96))',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.24)',
+        }}>
+        <button
+          type="button"
+          onClick={handleToggleMinimize}
+          aria-label="Expand sidebar"
+          className="flex h-full w-full items-center justify-center bg-transparent text-slate-100">
+          <Icon name="chevron-left" className="h-4 w-4 text-slate-100" />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={sidebarRef}
@@ -644,7 +694,13 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
         isMinimized ? 'collapsed' : '',
         isTransitioning ? 'sidebar-transitioning' : '',
       )}
-      style={{ width: isMinimized ? `${SIDEBAR_MINIMIZED_WIDTH}px` : `${sidebarWidth}px` }}>
+      style={{
+        width: isMinimized ? `${minimizedWidth}px` : `${sidebarWidth}px`,
+        height: isMobileCollapsed ? '52px' : '100vh',
+        top: isMobileCollapsed ? 'calc(50vh - 26px)' : '0',
+        right: isMobileCollapsed ? '10px' : '0',
+        borderRadius: isMobileCollapsed ? '999px' : '0',
+      }}>
       {/* Resize Handle - only visible when not minimized */}
       {!isMinimized && (
         <ResizeHandle

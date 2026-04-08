@@ -1,6 +1,32 @@
 import { readFileSync } from 'node:fs';
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
+const IS_MOBILE_BUILD = process.env.CEB_MOBILE === 'true';
+
+const desktopHostPermissions = [
+  '*://*.perplexity.ai/*',
+  '*://*.chat.openai.com/*',
+  '*://*.chatgpt.com/*',
+  '*://*.claude.ai/*',
+  '*://dav.jianguoyun.com/*',
+  '*://*.grok.com/*',
+  '*://*.x.com/*',
+  '*://*.twitter.com/*',
+  '*://*.gemini.google.com/*',
+  '*://*.aistudio.google.com/*',
+  '*://*.openrouter.ai/*',
+  '*://*.google-analytics.com/*',
+  '*://*.chat.deepseek.com/*',
+  '*://*.t3.chat/*',
+  '*://*.chat.mistral.ai/*',
+  '*://*.github.com/*',
+  '*://*.copilot.github.com/*',
+  '*://*.kimi.com/*',
+  '*://*.chat.z.ai/*',
+  '*://*.chat.qwen.ai/*',
+  'http://127.0.0.1/*',
+  'http://localhost/*',
+];
 
 /**
  * @prop default_locale
@@ -20,7 +46,7 @@ const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
 const manifest = {
   manifest_version: 3,
   default_locale: 'en',
-  name: 'MCP SuperAssistant',
+  name: IS_MOBILE_BUILD ? 'MCP SuperAssistant Mobile' : 'MCP SuperAssistant',
   browser_specific_settings: {
     gecko: {
       id: 'saurabh@mcpsuperassistant.ai',
@@ -28,31 +54,7 @@ const manifest = {
   },
   version: packageJson.version,
   description: 'MCP SuperAssistant',
-  host_permissions: [
-    '*://*.perplexity.ai/*',
-    '*://*.chat.openai.com/*',
-    '*://*.chatgpt.com/*',
-    '*://*.claude.ai/*',
-    '*://dav.jianguoyun.com/*',
-    '*://*.grok.com/*',
-    '*://*.x.com/*',
-    '*://*.twitter.com/*',
-    '*://*.gemini.google.com/*',
-    '*://*.aistudio.google.com/*',
-    '*://*.openrouter.ai/*',
-    '*://*.google-analytics.com/*',
-    '*://*.chat.deepseek.com/*',
-    '*://*.t3.chat/*',
-    '*://*.chat.mistral.ai/*',
-    '*://*.github.com/*',
-    '*://*.copilot.github.com/*',
-    '*://*.kimi.com/*',
-    '*://*.chat.z.ai/*',
-    '*://*.chat.qwen.ai/*',
-    'http://127.0.0.1/*',
-    'http://localhost/*',
-
-  ],
+  host_permissions: IS_MOBILE_BUILD ? ['<all_urls>'] : desktopHostPermissions,
 
   permissions: ['storage', 'clipboardWrite'],
   // permissions: ['storage', 'scripting', 'clipboardWrite'],

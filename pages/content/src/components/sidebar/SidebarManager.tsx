@@ -6,6 +6,9 @@ import Sidebar from './Sidebar';
 import type { UserPreferences } from '@src/types/stores';
 import { useUIStore } from '@src/stores/ui.store';
 
+const getMinimizedSidebarWidth = () => (window.innerWidth <= 768 ? 44 : 56);
+const IS_MOBILE_BUILD = process.env.CEB_MOBILE === 'true';
+
 // Helper function to get preferences from Zustand store
 const getZustandPreferences = (): UserPreferences => {
   try {
@@ -154,14 +157,15 @@ export class SidebarManager extends BaseSidebarManager {
     logMessage('[SidebarManager] Loading preferences from Zustand store before show()');
     try {
       const userPreferences = getZustandPreferences();
+      const shouldStartMinimized = IS_MOBILE_BUILD ? false : (userPreferences.isMinimized ?? false);
       logMessage(`[SidebarManager] Loaded Zustand preferences for show(): ${JSON.stringify(userPreferences)}`);
 
       // Set the data-initial-minimized attribute based on loaded preferences
       await this.initialize(); // Ensure initialized
       if (this.shadowHost) {
-        const wasMinimized = userPreferences.isMinimized ?? false;
-        this.shadowHost.setAttribute('data-initial-minimized', wasMinimized ? 'true' : 'false');
-        logMessage(`[SidebarManager] Set data-initial-minimized to '${wasMinimized ? 'true' : 'false'}'`);
+        this.shadowHost.setAttribute('data-initial-minimized', shouldStartMinimized ? 'true' : 'false');
+        this.updateHostFrame(shouldStartMinimized, userPreferences.sidebarWidth || 320);
+        logMessage(`[SidebarManager] Set data-initial-minimized to '${shouldStartMinimized ? 'true' : 'false'}'`);
       }
 
       // Only sync visibility state if this is a user-triggered show (not initialization)
@@ -232,13 +236,12 @@ export class SidebarManager extends BaseSidebarManager {
         const zustandState = JSON.parse(localStorage.getItem('mcp-super-assistant-ui-store') || '{}');
         const mcpEnabled = zustandState.state?.mcpEnabled ?? true; // Default to enabled for first-time users
 
-        // Check if sidebar visibility state exists in storage
-        // If it doesn't exist (first-time user), default to true
-        // If it exists, use the stored value
+        // Mobile build uses explicit Show/Hide controls instead of auto-showing the sidebar.
+        // Desktop keeps the previous first-load behavior.
         const sidebarState = zustandState.state?.sidebar;
         const lastVisibleState = sidebarState && typeof sidebarState.isVisible === 'boolean'
           ? sidebarState.isVisible
-          : true; // Default to true only for first-time users
+          : !IS_MOBILE_BUILD;
 
         logMessage(`[SidebarManager] MCP enabled: ${mcpEnabled}, Last visibility state: ${lastVisibleState}, Storage exists: ${!!sidebarState}`);
 
@@ -308,7 +311,7 @@ export class SidebarManager extends BaseSidebarManager {
     try {
       // Get preferences from Zustand store
       const preferences = getZustandPreferences();
-      const wasMinimized = preferences.isMinimized ?? false;
+      const wasMinimized = IS_MOBILE_BUILD ? false : (preferences.isMinimized ?? false);
       const isPushMode = preferences.isPushMode ?? false;
       const sidebarWidth = preferences.sidebarWidth || 320;
 
@@ -321,12 +324,11 @@ export class SidebarManager extends BaseSidebarManager {
         // Set initial state attributes FIRST - this is what React will read
         if (wasMinimized) {
           this.shadowHost.setAttribute('data-initial-minimized', 'true');
-          // Force immediate width for minimized state
-          this.shadowHost.style.width = '56px';
         } else {
           // Ensure the attribute is explicitly set to false for expanded state
           this.shadowHost.setAttribute('data-initial-minimized', 'false');
         }
+        this.updateHostFrame(wasMinimized, sidebarWidth);
 
         // Make sidebar visible
         this.shadowHost.style.display = 'block';
@@ -370,6 +372,7 @@ export class SidebarManager extends BaseSidebarManager {
       await this.initialize();
       if (this.shadowHost) {
         this.shadowHost.setAttribute('data-initial-minimized', 'false');
+        this.updateHostFrame(false);
         this.shadowHost.style.display = 'block';
         this.shadowHost.style.opacity = '1';
         this.shadowHost.classList.add('initialized');
@@ -418,6 +421,7 @@ export class SidebarManager extends BaseSidebarManager {
       await this.initialize();
       if (this.shadowHost) {
         this.shadowHost.setAttribute('data-initial-minimized', 'false');
+        this.updateHostFrame(false);
         this.shadowHost.style.display = 'block';
         this.shadowHost.style.opacity = '1';
         this.shadowHost.classList.add('initialized');

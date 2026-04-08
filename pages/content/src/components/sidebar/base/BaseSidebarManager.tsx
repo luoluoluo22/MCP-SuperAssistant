@@ -10,6 +10,9 @@ import {
 } from '@src/utils/shadowDom';
 import '@src/components/sidebar/styles/sidebar.css';
 
+const getMinimizedSidebarWidth = () => (window.innerWidth <= 768 ? 44 : 56);
+const isMobileViewport = () => window.innerWidth <= 768;
+
 /**
  * Type definition for the site type
  */
@@ -50,6 +53,36 @@ export abstract class BaseSidebarManager {
    */
   public getShadowHost(): HTMLDivElement | null {
     return this.shadowHost;
+  }
+
+  public updateHostFrame(isCollapsed: boolean, expandedWidth?: number): void {
+    if (!this.shadowHost) {
+      return;
+    }
+
+    if (isCollapsed) {
+      const minimizedWidth = getMinimizedSidebarWidth();
+      this.shadowHost.style.width = `${minimizedWidth}px`;
+
+      if (isMobileViewport()) {
+        this.shadowHost.style.height = '52px';
+        this.shadowHost.style.top = 'calc(50vh - 26px)';
+        this.shadowHost.style.right = '10px';
+        this.shadowHost.style.borderRadius = '999px';
+      } else {
+        this.shadowHost.style.height = '100vh';
+        this.shadowHost.style.top = '0';
+        this.shadowHost.style.right = '0';
+        this.shadowHost.style.borderRadius = '0';
+      }
+      return;
+    }
+
+    this.shadowHost.style.width = `${expandedWidth || 320}px`;
+    this.shadowHost.style.height = '100vh';
+    this.shadowHost.style.top = '0';
+    this.shadowHost.style.right = '0';
+    this.shadowHost.style.borderRadius = '0';
   }
 
   /**
@@ -105,7 +138,7 @@ export abstract class BaseSidebarManager {
 
     if (enabled) {
       // Set sidebar width CSS variable
-      const width = isCollapsed ? 56 : sidebarWidth || 320;
+      const width = isCollapsed ? getMinimizedSidebarWidth() : sidebarWidth || 320;
       document.documentElement.style.setProperty('--sidebar-width-mcp', `${width}px`);
 
       // Apply specific inline styles directly to the HTML element with !important
@@ -385,6 +418,7 @@ export abstract class BaseSidebarManager {
         this.shadowHost.style.top = '0';
         this.shadowHost.style.right = '0';
         this.shadowHost.style.zIndex = '9999';
+        this.shadowHost.style.width = '320px';
         this.shadowHost.style.height = '100vh';
         this.shadowHost.style.pointerEvents = 'none'; // Allow clicks 'through' the host
         this.shadowHost.style.display = 'none'; // Initialize as hidden

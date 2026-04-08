@@ -701,7 +701,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isHoverOverlayVisible, setIsHoverOverlayVisible] = useState(false);
   const [hoverOverlayPosition, setHoverOverlayPosition] = useState({ x: 0, y: 0 });
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true); // Track sidebar visibility
+  const [isSidebarVisible, setIsSidebarVisible] = useState(!IS_MOBILE_BUILD); // Track sidebar visibility
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -927,6 +927,25 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
     logger.debug(`Toggle sidebar requested. Current state: ${isSidebarVisible}`);
 
     try {
+      const { useUIStore } = await import('../../stores/ui.store');
+      const store = useUIStore.getState();
+
+      if (IS_MOBILE_BUILD && !isSidebarVisible) {
+        useUIStore.setState(state => ({
+          sidebar: {
+            ...state.sidebar,
+            isMinimized: false,
+            isVisible: true,
+          },
+          preferences: {
+            ...state.preferences,
+            isMinimized: false,
+          },
+        }));
+      }
+
+      store.setSidebarVisibility(!isSidebarVisible, 'mcp-popover-toggle');
+
       const manager = (window as any).activeSidebarManager;
 
       if (manager) {
@@ -938,11 +957,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
           await manager.show();
         }
       } else {
-        logger.warn('[MCPPopover] activeSidebarManager not available, using fallback');
-        // Fallback: Use Zustand store directly
-        const { useUIStore } = await import('../../stores/ui.store');
-        const store = useUIStore.getState();
-        store.setSidebarVisibility(!isSidebarVisible, 'mcp-popover-toggle');
+        logger.warn('[MCPPopover] activeSidebarManager not available, relying on UI store state');
       }
 
       // Update local state immediately for responsive UI
@@ -1436,3 +1451,4 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
 };
 
 export default MCPPopover;
+const IS_MOBILE_BUILD = process.env.CEB_MOBILE === 'true';

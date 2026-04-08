@@ -62,6 +62,8 @@ tasks/
 ADAPTER_BUTTON_STYLING.md
 bun.lock
 commit_diff.patch
+dist-mobile-packages/
+web-extension.crx
 DYNAMIC_THEMING.md
 file_structure.md
 FIREBASE_REMOTE_CONFIG_ADAPTER_INTEGRATION.md

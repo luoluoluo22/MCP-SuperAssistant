@@ -26,6 +26,12 @@ class McpClient {
   private isInitialized = false;
   private heartbeatInterval: number | null = null;
   private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  private lastHeartbeatResponseAt: number = 0;
+  private consecutiveHeartbeatFailures = 0;
+  private reconnectInFlight = false;
+  private lastReconnectAttemptAt = 0;
+  private readonly HEARTBEAT_FAILURE_THRESHOLD = 2;
+  private readonly RECONNECT_COOLDOWN = 15000;
 
   private constructor() {
     this.initialize();
@@ -269,12 +275,14 @@ class McpClient {
         store.setDisconnected(error ?? 'Unknown connection error');
         eventBus.emit('connection:status-changed', { status, error: error ?? 'Unknown connection error' });
         logMessage(`[McpClient] Emitted error status to event bus`);
+        this.scheduleAutoReconnect(`status:${status}`, error);
         break;
       case 'disconnected':
       default:
         store.setDisconnected(error);
         eventBus.emit('connection:status-changed', { status: 'disconnected', error });
         logMessage(`[McpClient] Emitted disconnected status to event bus`);
+        this.scheduleAutoReconnect(`status:${status}`, error);
     }
   }
 
@@ -309,6 +317,8 @@ class McpClient {
    * Handle heartbeat responses to maintain connection awareness
    */
   private handleHeartbeatResponse(timestamp: number): void {
+    this.lastHeartbeatResponseAt = Date.now();
+    this.consecutiveHeartbeatFailures = 0;
     // Update last heartbeat time in connection store if needed
     eventBus.emit('connection:heartbeat', { timestamp });
   }
@@ -346,15 +356,54 @@ class McpClient {
    */
   private async sendHeartbeat(): Promise<void> {
     try {
-      await contextBridge.sendMessage('background', 'mcp:heartbeat', { timestamp: Date.now() }, { timeout: 5000 });
+      const response = await contextBridge.sendMessage('background', 'mcp:heartbeat', { timestamp: Date.now() }, { timeout: 5000 });
+      this.lastHeartbeatResponseAt = Date.now();
+      this.consecutiveHeartbeatFailures = 0;
+
+      if (response && typeof response.isConnected === 'boolean' && !response.isConnected) {
+        this.scheduleAutoReconnect('heartbeat-disconnected');
+      }
     } catch (error) {
       // Heartbeat failure might indicate connection issues
       const errorMessage = error instanceof Error ? error.message : String(error);
       logMessage(`[McpClient] Heartbeat failed: ${errorMessage}`);
+      this.consecutiveHeartbeatFailures += 1;
+
+      if (this.consecutiveHeartbeatFailures >= this.HEARTBEAT_FAILURE_THRESHOLD) {
+        this.scheduleAutoReconnect('heartbeat-failed', errorMessage);
+      }
 
       // Don't automatically change connection status on heartbeat failure
       // Let the background script handle connection status updates
     }
+  }
+
+  private scheduleAutoReconnect(reason: string, details?: string): void {
+    if (!this.isInitialized || this.reconnectInFlight) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - this.lastReconnectAttemptAt < this.RECONNECT_COOLDOWN) {
+      return;
+    }
+
+    const currentStatus = useConnectionStore.getState().status;
+    if (currentStatus === 'reconnecting') {
+      return;
+    }
+
+    this.reconnectInFlight = true;
+    this.lastReconnectAttemptAt = now;
+    logMessage(`[McpClient] Scheduling auto reconnect due to ${reason}${details ? ` (${details})` : ''}`);
+
+    void this.forceReconnect()
+      .catch(error => {
+        logMessage(`[McpClient] Auto reconnect failed: ${error instanceof Error ? error.message : String(error)}`);
+      })
+      .finally(() => {
+        this.reconnectInFlight = false;
+      });
   }
 
   /* ------------------------------------------------------------------ */

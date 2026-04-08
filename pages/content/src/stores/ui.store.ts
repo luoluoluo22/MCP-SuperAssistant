@@ -9,6 +9,7 @@ import { createLogger } from '@extension/shared/lib/logger';
 
 
 const logger = createLogger('useUIStore');
+const IS_MOBILE_BUILD = process.env.CEB_MOBILE === 'true';
 
 export interface UIState {
   sidebar: SidebarState;
@@ -38,7 +39,7 @@ export interface UIState {
 }
 
 const initialSidebarState: SidebarState = {
-  isVisible: true, // Default to visible for first-time users; persisted value will override for returning users
+  isVisible: !IS_MOBILE_BUILD, // Mobile build starts hidden and relies on explicit Show/Hide actions
   isMinimized: false,
   position: 'left',
   width: 320, // Default width from app.store, could be synced or independent
