@@ -186,6 +186,25 @@ const createOptimizedElement = (
 
   return element;
 };
+
+export const findOriginalFunctionSourceElement = (blockId: string): HTMLElement | null => {
+  const selectors = [
+    `pre[data-block-id="${blockId}"]`,
+    `code[data-block-id="${blockId}"]`,
+    `[data-block-id="${blockId}"][data-monitored-node]`,
+    `[data-block-id="${blockId}"]:not(.function-block)`,
+  ];
+
+  for (const selector of selectors) {
+    const candidate = document.querySelector(selector) as HTMLElement | null;
+    if (candidate && !candidate.classList.contains('function-block')) {
+      return candidate;
+    }
+  }
+
+  const allMatches = Array.from(document.querySelectorAll(`[data-block-id="${blockId}"]`)) as HTMLElement[];
+  return allMatches.find(node => !node.classList.contains('function-block')) || null;
+};
 /**
  * Add the raw XML toggle button and pre element to a function block
  * Performance optimized version using ElementPool and batch DOM operations
@@ -204,7 +223,7 @@ export const addRawXmlToggle = (blockDiv: HTMLDivElement, rawContent: string): v
 
   if (blockId) {
     // Try to find the original element with the complete XML
-    const originalPre = document.querySelector(`div[data-block-id="${blockId}"]`);
+    const originalPre = findOriginalFunctionSourceElement(blockId);
     if (originalPre) {
       // Extract clean JSON content for display (removes localized UI labels)
       rawContent = extractCleanContent(originalPre.textContent?.trim() || rawContent);
@@ -585,6 +604,14 @@ export const addExecuteButton = (blockDiv: HTMLDivElement, rawContent: string): 
   if (blockDiv.querySelector('.execute-button')) {
     return;
   }
+
+  const ownerBlock = blockDiv.classList.contains('function-buttons')
+    ? (blockDiv.closest('.function-block') as HTMLDivElement | null)
+    : blockDiv;
+  const blockId = ownerBlock?.getAttribute('data-block-id');
+  const originalSource = blockId ? findOriginalFunctionSourceElement(blockId) : null;
+
+  rawContent = extractCleanContent(originalSource?.textContent?.trim() || rawContent);
 
   // Detect format and extract function name and parameters
   const isJSON = rawContent.includes('"type"') && rawContent.includes('function_call');
@@ -1508,6 +1535,8 @@ export const displayResult = (
                       result: wrapperText,
                       isFileAttachment: false,
                       fileName: '',
+                      callId,
+                      functionName,
                       skipAutoInsertCheck: true,
                     },
                   }),
@@ -1531,6 +1560,8 @@ export const displayResult = (
                       result: wrapperText,
                       isFileAttachment: false,
                       fileName: '',
+                      callId,
+                      functionName,
                       skipAutoInsertCheck: true,
                     },
                   }),
@@ -1571,6 +1602,8 @@ export const displayResult = (
                   result: wrapperText,
                   isFileAttachment: false,
                   fileName: '',
+                  callId,
+                  functionName,
                   skipAutoInsertCheck: true,
                 },
               }),
@@ -1682,6 +1715,8 @@ export const displayResult = (
                             result: message,
                             isFileAttachment: false,
                             fileName: '',
+                            callId,
+                            functionName,
                             skipAutoInsertCheck: true,
                           },
                         }),
@@ -1697,15 +1732,17 @@ export const displayResult = (
               try {
                 requestAnimationFrame(() => {
                   document.dispatchEvent(
-                    new CustomEvent('mcp:tool-execution-complete', {
-                      detail: {
-                        result: message,
-                        isFileAttachment: false,
-                        fileName: '',
-                        skipAutoInsertCheck: true,
-                      },
-                    }),
-                  );
+                  new CustomEvent('mcp:tool-execution-complete', {
+                    detail: {
+                      result: message,
+                      isFileAttachment: false,
+                      fileName: '',
+                      callId,
+                      functionName,
+                      skipAutoInsertCheck: true,
+                    },
+                  }),
+                );
                 });
               } catch (legacyError) {
                 logger.warn('Legacy insertion for auto-attachment failed:', legacyError);
@@ -1734,6 +1771,8 @@ export const displayResult = (
           new CustomEvent('mcp:tool-execution-complete', {
             detail: {
               result: wrappedResult,
+              callId,
+              functionName,
               skipAutoInsertCheck: false
             },
           }),

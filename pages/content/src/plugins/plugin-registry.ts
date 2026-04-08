@@ -16,6 +16,7 @@ import { DefaultAdapter } from './adapters/default.adapter';
 
 // import { ExampleForumAdapter } from './adapters/example-forum.adapter';
 import { GeminiAdapter } from './adapters/gemini.adapter';
+import { ClaudeAdapter } from './adapters/claude.adapter';
 import { GitHubCopilotAdapter } from './adapters/ghcopilot.adapter';
 import { DeepSeekAdapter } from './adapters/deepseek.adapter';
 import { GrokAdapter } from './adapters/grok.adapter';
@@ -776,6 +777,28 @@ class PluginRegistry {
           name: 'ChatGPT Adapter',
           description: 'Specialized adapter for OpenAI ChatGPT with chat input, form submission, and file attachment support',
           version: '2.0.0',
+          enabled: true,
+          priority: 5,
+          settings: {
+            logLevel: 'info',
+            urlCheckInterval: 1000,
+          },
+        },
+      });
+
+      // Register ClaudeAdapter factory for Claude AI
+      this.registerAdapterFactory({
+        name: 'claude-adapter',
+        version: '1.0.0',
+        type: 'website-adapter',
+        hostnames: ['claude.ai'],
+        capabilities: ['text-insertion', 'form-submission', 'dom-manipulation'],
+        create: () => new ClaudeAdapter(),
+        config: {
+          id: 'claude-adapter',
+          name: 'Claude Adapter',
+          description: 'Specialized adapter for Claude with chat input, form submission, and MCP popover support',
+          version: '1.0.0',
           enabled: true,
           priority: 5,
           settings: {

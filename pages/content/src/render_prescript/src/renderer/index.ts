@@ -9,7 +9,13 @@ import { CONFIG } from '../core/config';
 import type { FunctionInfo, ParamValueElement } from '../core/types';
 import { Parameter } from '../core/types';
 import { extractParameters } from '../parser/index';
-import { stabilizeBlock, unstabilizeBlock, addExecuteButton, smoothlyUpdateBlockContent } from './components';
+import {
+  stabilizeBlock,
+  unstabilizeBlock,
+  addExecuteButton,
+  smoothlyUpdateBlockContent,
+  findOriginalFunctionSourceElement,
+} from './components';
 import { createOrUpdateParamElement } from './functionBlock';
 import { safelySetContent } from '../utils/dom';
 
@@ -65,7 +71,7 @@ const updateExistingFunctionBlock = (
     // Add execute button if not already present
     if (!block.querySelector('.execute-button')) {
       // Find the original pre element to get the raw content
-      const originalPre = document.querySelector(`div[data-block-id="${blockId}"]`);
+      const originalPre = findOriginalFunctionSourceElement(blockId);
       if (originalPre && originalPre.textContent?.trim()) {
         addExecuteButton(block as HTMLDivElement, originalPre.textContent!.trim());
       }

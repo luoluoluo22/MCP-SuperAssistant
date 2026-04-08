@@ -24,6 +24,121 @@ declare global {
   }
 }
 
+const createHistoryExpandableContent = (): HTMLDivElement => {
+  const expandableContent = document.createElement('div');
+  expandableContent.className = 'function-history-content';
+  expandableContent.style.display = 'none';
+  expandableContent.style.overflow = 'hidden';
+  expandableContent.style.width = '100%';
+  expandableContent.style.boxSizing = 'border-box';
+  expandableContent.style.transition =
+    'max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+  expandableContent.style.maxHeight = '0px';
+  expandableContent.style.opacity = '0';
+  expandableContent.style.paddingTop = '0';
+  expandableContent.style.paddingBottom = '0';
+  return expandableContent;
+};
+
+const createHistoryHeader = (
+  title: string,
+): { header: HTMLDivElement; expandButton: HTMLButtonElement } => {
+  const header = document.createElement('div');
+  header.className = 'function-name';
+  header.style.cursor = 'pointer';
+
+  const leftSection = document.createElement('div');
+  leftSection.className = 'function-name-left';
+
+  const titleElement = document.createElement('div');
+  titleElement.className = 'function-name-text';
+  titleElement.textContent = title;
+  leftSection.appendChild(titleElement);
+
+  const rightSection = document.createElement('div');
+  rightSection.className = 'function-name-right';
+
+  const expandButton = document.createElement('button');
+  expandButton.className = 'expand-button';
+  expandButton.title = 'Expand execution history';
+  expandButton.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `;
+
+  rightSection.appendChild(expandButton);
+  header.appendChild(leftSection);
+  header.appendChild(rightSection);
+
+  return { header, expandButton };
+};
+
+const setupHistoryExpandCollapse = (
+  historyPanel: HTMLDivElement,
+  expandableContent: HTMLDivElement,
+  expandButton: HTMLButtonElement,
+): void => {
+  const toggle = (event?: Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    const isExpanded = historyPanel.classList.contains('expanded');
+    const expandIcon = expandButton.querySelector('svg path');
+
+    if (isExpanded) {
+      historyPanel.classList.remove('expanded');
+      const currentHeight = expandableContent.scrollHeight;
+      expandableContent.style.maxHeight = `${currentHeight}px`;
+      expandableContent.offsetHeight;
+
+      requestAnimationFrame(() => {
+        expandableContent.style.maxHeight = '0px';
+        expandableContent.style.opacity = '0';
+        expandableContent.style.paddingTop = '0';
+        expandableContent.style.paddingBottom = '0';
+        if (expandIcon) {
+          expandIcon.setAttribute('d', 'M8 10l4 4 4-4');
+        }
+        expandButton.title = 'Expand execution history';
+      });
+
+      setTimeout(() => {
+        if (!historyPanel.classList.contains('expanded')) {
+          expandableContent.style.display = 'none';
+        }
+      }, 250);
+
+      return;
+    }
+
+    historyPanel.classList.add('expanded');
+    expandableContent.style.display = 'block';
+    expandableContent.style.maxHeight = '0px';
+    expandableContent.style.opacity = '0';
+    expandableContent.style.paddingTop = '0';
+    expandableContent.style.paddingBottom = '0';
+
+    const targetHeight = expandableContent.scrollHeight + 24;
+    requestAnimationFrame(() => {
+      expandableContent.style.maxHeight = `${targetHeight}px`;
+      expandableContent.style.opacity = '1';
+      expandableContent.style.paddingTop = '12px';
+      expandableContent.style.paddingBottom = '12px';
+      if (expandIcon) {
+        expandIcon.setAttribute('d', 'M16 14l-4-4-4 4');
+      }
+      expandButton.title = 'Collapse execution history';
+    });
+  };
+
+  expandButton.onclick = toggle;
+  const header = expandButton.closest('.function-name') as HTMLDivElement | null;
+  if (header) {
+    header.onclick = toggle;
+  }
+};
+
 /**
  * Create a history panel for previously executed functions
  *
@@ -86,11 +201,12 @@ export const updateHistoryPanel = (
   // Clear existing content
   historyPanel.innerHTML = '';
 
-  // Create header
-  const header = document.createElement('div');
-  header.className = 'function-history-header';
-  header.textContent = 'Execution History';
+  const { header, expandButton } = createHistoryHeader('Execution History');
   historyPanel.appendChild(header);
+
+  const expandableContent = createHistoryExpandableContent();
+  historyPanel.appendChild(expandableContent);
+  setupHistoryExpandCollapse(historyPanel, expandableContent, expandButton);
 
   // Create execution info
   const executionInfo = document.createElement('div');
@@ -103,7 +219,7 @@ export const updateHistoryPanel = (
     <div>Function: <strong>${executionData.functionName}</strong></div>
     <div>Last executed: <strong>${executionTime}</strong></div>
   `;
-  historyPanel.appendChild(executionInfo);
+  expandableContent.appendChild(executionInfo);
 
   // Create re-execute button
   const reExecuteBtn = document.createElement('button');
@@ -202,7 +318,7 @@ export const updateHistoryPanel = (
     }
   };
 
-  historyPanel.appendChild(reExecuteBtn);
+  expandableContent.appendChild(reExecuteBtn);
 
   // Show the panel
   historyPanel.style.display = 'block';

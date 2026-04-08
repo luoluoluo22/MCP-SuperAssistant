@@ -89,6 +89,13 @@ export interface AutomationState {
   autoExecuteDelay: number;
 }
 
+interface QueuedAutomationTask {
+  id: string;
+  detail: ToolExecutionCompleteDetail;
+  automationState: AutomationState;
+  queuedAt: number;
+}
+
 /**
  * Automation Service Class
  * Handles all automation logic for MCP tool execution results
@@ -97,6 +104,9 @@ export class AutomationService {
   private static instance: AutomationService | null = null;
   private isInitialized = false;
   private eventListener: ((event: Event) => void) | null = null;
+  private automationQueue: QueuedAutomationTask[] = [];
+  private isProcessingQueue = false;
+  private taskSequence = 0;
 
   // Private constructor for singleton pattern
   private constructor() {}
@@ -199,46 +209,100 @@ export class AutomationService {
       return;
     }
 
-    const detail = event.detail;
+    const detail = { ...event.detail };
     logger.debug('[AutomationService] Tool execution complete event received:', detail);
 
     try {
-      // Get current automation state from user preferences
       const automationState = await this.getAutomationState();
-      
       if (!automationState) {
         logger.debug('[AutomationService] Could not get automation state, skipping automation');
         return;
       }
 
-      // Update automation state on window for render_prescript access
       await this.exposeAutomationStateToWindow();
-
-      logger.debug('[AutomationService] Current automation state:', automationState);
-
-      // Handle Auto Execute (always run if enabled, independent of other actions)
-      if (automationState.autoExecute) {
-        this.handleAutoExecute(detail);
-      }
-
-      // Handle Auto Insert and Auto Submit logic
-      // Skip auto-insert if skipAutoInsertCheck is true (for manual actions)
-      const shouldAutoInsert = automationState.autoInsert && !detail.skipAutoInsertCheck;
-      
-      if (shouldAutoInsert) {
-        const insertSuccess = await this.handleAutoInsert(detail);
-        
-        // Only proceed with auto submit if auto insert was successful
-        // and auto submit is enabled
-        if (insertSuccess && automationState.autoSubmit) {
-          await this.handleAutoSubmit(detail);
-        }
-      } else {
-        logger.debug('[AutomationService] Auto Insert disabled, skipping insert and submit actions');
-      }
+      this.enqueueAutomationTask(detail, automationState);
 
     } catch (error) {
       logger.error('[AutomationService] Error handling tool execution complete:', error);
+    }
+  }
+
+  private enqueueAutomationTask(
+    detail: ToolExecutionCompleteDetail,
+    automationState: AutomationState,
+  ): void {
+    const task: QueuedAutomationTask = {
+      id: `automation-${Date.now()}-${this.taskSequence++}`,
+      detail,
+      automationState,
+      queuedAt: Date.now(),
+    };
+
+    this.automationQueue.push(task);
+    logger.debug('[AutomationService] Queued automation task', {
+      taskId: task.id,
+      queueLength: this.automationQueue.length,
+      functionName: detail.functionName,
+      callId: detail.callId,
+    });
+
+    void this.processAutomationQueue();
+  }
+
+  private async processAutomationQueue(): Promise<void> {
+    if (this.isProcessingQueue) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    try {
+      while (this.automationQueue.length > 0) {
+        const task = this.automationQueue.shift();
+        if (!task) {
+          continue;
+        }
+
+        logger.debug('[AutomationService] Processing automation task', {
+          taskId: task.id,
+          queueLength: this.automationQueue.length,
+          queuedForMs: Date.now() - task.queuedAt,
+          functionName: task.detail.functionName,
+          callId: task.detail.callId,
+        });
+
+        await this.runAutomationTask(task);
+      }
+    } finally {
+      this.isProcessingQueue = false;
+    }
+  }
+
+  private async runAutomationTask(task: QueuedAutomationTask): Promise<void> {
+    const { detail, automationState, id } = task;
+
+    logger.debug('[AutomationService] Current automation state for task:', {
+      taskId: id,
+      automationState,
+    });
+
+    if (automationState.autoExecute) {
+      await this.handleAutoExecute(detail);
+    }
+
+    const shouldAutoInsert = automationState.autoInsert && !detail.skipAutoInsertCheck;
+
+    if (!shouldAutoInsert) {
+      logger.debug('[AutomationService] Auto Insert disabled for task, skipping insert and submit actions', {
+        taskId: id,
+        skipAutoInsertCheck: detail.skipAutoInsertCheck,
+      });
+      return;
+    }
+
+    const insertSuccess = await this.handleAutoInsert(detail);
+    if (insertSuccess && automationState.autoSubmit) {
+      await this.handleAutoSubmit(detail);
     }
   }
 

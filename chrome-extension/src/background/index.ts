@@ -48,13 +48,13 @@ const DEFAULT_STREAMABLE_HTTP_URL = 'http://localhost:3006';
 
 // Connection type management
 type ConnectionType = TransportType;
-const DEFAULT_CONNECTION_TYPE: ConnectionType = 'sse';
+const DEFAULT_CONNECTION_TYPE: ConnectionType = 'websocket';
 
 // Remote Config Manager
 let remoteConfigManager: RemoteConfigManager | null = null;
 
 // Background script state management with connection type support
-let serverUrl: string = DEFAULT_SSE_URL;
+let serverUrl: string = DEFAULT_WEBSOCKET_URL;
 let connectionType: ConnectionType = DEFAULT_CONNECTION_TYPE;
 let isConnected: boolean = false;
 let connectionCount: number = 0;
@@ -86,7 +86,7 @@ async function initializeServerConfig(): Promise<void> {
   } catch (error) {
     logger.warn('[Background] Failed to load server config from storage, using defaults:', error);
     connectionType = DEFAULT_CONNECTION_TYPE;
-    serverUrl = DEFAULT_SSE_URL;
+    serverUrl = DEFAULT_WEBSOCKET_URL;
     isInitialized = true;
   }
 }
@@ -666,6 +666,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Keep channel open for async response
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Cloud Sync integration                                              */
+  /* ------------------------------------------------------------------ */
+  if (typeof message.type === 'string' && message.type.startsWith('cloud-sync:')) {
+    handleCloudSyncMessage(message, sender, sendResponse);
+    return true;
+  }
+
   // Fallback – message not handled here
   logger.debug('[Background] Message not handled, ignoring:', message.type || message.command);
   return false;
@@ -814,7 +822,12 @@ async function handleMcpMessage(
 
       case 'mcp:get-server-config': {
         const stored = await chrome.storage.local.get(['mcpServerUrl', 'mcpConnectionType']);
-        const defaultUrl = connectionType === 'websocket' ? DEFAULT_WEBSOCKET_URL : DEFAULT_SSE_URL;
+        const defaultUrl =
+          connectionType === 'websocket'
+            ? DEFAULT_WEBSOCKET_URL
+            : connectionType === 'streamable-http'
+              ? DEFAULT_STREAMABLE_HTTP_URL
+              : DEFAULT_SSE_URL;
         result = { 
           uri: stored.mcpServerUrl || defaultUrl,
           connectionType: stored.mcpConnectionType || connectionType
@@ -1157,6 +1170,56 @@ async function handleRemoteConfigMessage(
     };
     
     sendResponse(response);
+  }
+}
+
+async function handleCloudSyncMessage(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void
+) {
+  const startTime = Date.now();
+
+  try {
+    logger.debug(`Processing Cloud Sync message: ${message.type}`);
+
+    const { url, method = 'GET', headers = {}, body } = message.payload || {};
+
+    if (!url || typeof url !== 'string') {
+      throw new Error('Cloud sync request requires a valid url');
+    }
+
+    const response = await fetch(url, {
+      method,
+      headers,
+      body,
+    });
+
+    const text = await response.text();
+    const result = {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      text,
+    };
+
+    sendResponse({
+      success: true,
+      data: result,
+      processingTime: Date.now() - startTime,
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(`Error processing Cloud Sync message ${message.type}:`, error);
+
+    sendResponse({
+      success: false,
+      error: errorMessage,
+      processingTime: Date.now() - startTime,
+      timestamp: Date.now(),
+    });
   }
 }
 

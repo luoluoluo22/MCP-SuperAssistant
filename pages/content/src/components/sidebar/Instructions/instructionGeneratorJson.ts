@@ -1,8 +1,10 @@
 // pages/content/src/utils/instructionGenerator.ts
 import { jsonSchemaToCsn } from './schema_converter';
 import { chatgptInstructions } from './website_specific_instruction/chatgpt';
+import { claudeInstructions } from './website_specific_instruction/claude';
 import { geminiInstructions } from './website_specific_instruction/gemini';
 import { createLogger } from '@extension/shared/lib/logger';
+import { buildSkillBundles, summarizeToolParameters, type SkillMetadata } from './skillRegistry';
 
 /**
  * Generates markdown instructions for using MCP tools based on available tools
@@ -18,15 +20,48 @@ export const generateInstructionsJson = (
   tools: Array<{ name: string; schema: string; description: string }>,
   customInstructions?: string,
   customInstructionsEnabled?: boolean,
+  skillTemplates?: SkillMetadata[],
 ): string => {
   if (!tools || tools.length === 0) {
     return '# No tools available\n\nConnect to the MCP server to see available tools.';
   }
 
+  const currentHost = window.location.hostname;
+  const skillBundles = buildSkillBundles(tools, currentHost, skillTemplates);
+  const expandedSkills = skillBundles.filter(bundle => bundle.expanded);
+  const compactSkills = skillBundles.filter(bundle => !bundle.expanded);
+
   // Start with a header
   // let instructions = '# MCP Tools Instructions\n\n';
   let instructions = '';
   let compressed_schema_notation = '';
+
+  instructions += '[SuperAssistant Skill Registry]\n\n';
+  instructions += '<skill_registry>\n';
+  instructions += 'You must reason in two stages before any tool call:\n';
+  instructions += '1. Choose the most relevant skill based on the user request.\n';
+  instructions += '2. Choose a tool only from that skill unless the request clearly requires another skill.\n\n';
+  instructions += 'A skill is the capability grouping. A tool is the executable MCP primitive.\n';
+  instructions += 'Always prefer the smallest relevant skill first, and only then select the exact tool name.\n\n';
+
+  instructions += '## SKILL REGISTRY\n\n';
+  expandedSkills.forEach(bundle => {
+    instructions += `### ${bundle.name}\n`;
+    instructions += `Description: ${bundle.description}\n`;
+    if (bundle.body) {
+      instructions += `Usage Notes: ${bundle.body.replace(/^#.*$/gm, '').replace(/\n+/g, ' ').trim()}\n`;
+    }
+    instructions += `Allowed tools: ${bundle.tools.map(tool => `\`${tool.name}\``).join(', ')}\n\n`;
+  });
+
+  if (compactSkills.length > 0) {
+    instructions += '## OTHER SKILLS\n\n';
+    compactSkills.forEach(bundle => {
+      instructions += `- ${bundle.name}: ${bundle.description}\n`;
+    });
+    instructions += '\n';
+  }
+  instructions += '</skill_registry>\n\n';
 
   // Add general usage information
   // instructions += '## General Usage\n\n';
@@ -119,7 +154,6 @@ Do not use <thoughts> tag in your output, that is just output format reference t
 
   // Add website-specific instructions based on the current site
   //# Gemini-Specific Instructions
-  const currentHost = window.location.hostname;
   if (currentHost.includes('gemini')) {
     instructions += geminiInstructions;
   }
@@ -127,6 +161,11 @@ Do not use <thoughts> tag in your output, that is just output format reference t
   //# ChatGPT-Specific Instructions
   if (currentHost.includes('chatgpt')) {
     instructions += chatgptInstructions;
+  }
+
+  //# Claude-Specific Instructions
+  if (currentHost.includes('claude')) {
+    instructions += claudeInstructions;
   }
 
   // instructions += 'To use an MCP tool, wrap your tool call in `<use_mcp_tool>` tags like this:\n\n';
@@ -194,104 +233,44 @@ ClassName | Custom class | User
 
   // instructions += '\n';
 
-  // Add available tools section
-  instructions += '## AVAILABLE TOOLS FOR SUPERASSISTANT\n\n';
+  instructions += '## ACTIVE SKILLS AND TOOLS\n\n';
+  instructions +=
+    'Only prefer tools from the selected skill below unless the user request clearly needs another skill. Use exact tool names as listed.\n\n';
 
-  // Add each tool with its schema
-  tools.forEach(tool => {
-    instructions += ` - ${tool.name}\n`;
+  expandedSkills.forEach(bundle => {
+    instructions += `### ${bundle.name}\n`;
+    instructions += `${bundle.description}\n`;
+    instructions += `Tools in this skill: ${bundle.tools.length}\n\n`;
 
-    try {
-      // Parse the schema to get more details
-      const schema = JSON.parse(tool.schema);
-
-      // Add description if available
+    bundle.tools.forEach(tool => {
+      const parameterSummary = summarizeToolParameters(tool.schema);
+      instructions += `- \`${tool.name}\``;
       if (tool.description) {
-        instructions += `**Description**: ${tool.description}\n`;
+        instructions += `: ${tool.description}`;
+      }
+      instructions += '\n';
+
+      if (parameterSummary.required.length > 0) {
+        instructions += `  required params: ${parameterSummary.required.map(param => `\`${param}\``).join(', ')}\n`;
+      } else {
+        instructions += '  required params: none\n';
       }
 
-      // // Add parameters if available
-      if (schema.properties && Object.keys(schema.properties).length > 0) {
-        instructions += '**Parameters**:\n';
-
-        const requiredParams = Array.isArray(schema.required) ? schema.required : [];
-        Object.entries(schema.properties).forEach(([paramName, paramDetails]: [string, any]) => {
-          const isRequired = requiredParams.includes(paramName);
-          instructions += `- \`${paramName}\`: ${paramDetails.description ? paramDetails.description : ''} (${paramDetails.type || 'any'}) (${isRequired ? 'required' : 'optional'})\n`;
-
-          // Handle nested objects
-          if (paramDetails.type === 'object' && paramDetails.properties) {
-            instructions += '  - Properties:\n';
-            Object.entries(paramDetails.properties).forEach(([nestedName, nestedDetails]: [string, any]) => {
-              instructions += `    - \`${nestedName}\`: ${nestedDetails.description || 'No description'} (${nestedDetails.type || 'any'})\n`;
-            });
-          }
-
-          // Handle arrays with object items
-          if (
-            paramDetails.type === 'array' &&
-            paramDetails.items &&
-            paramDetails.items.type === 'object' &&
-            paramDetails.items.properties
-          ) {
-            instructions += '  - Array items (objects) with properties:\n';
-            Object.entries(paramDetails.items.properties).forEach(([itemName, itemDetails]: [string, any]) => {
-              instructions += `    - \`${itemName}\`: ${itemDetails.description || 'No description'} (${itemDetails.type || 'any'})\n`;
-            });
-          }
-        });
-
-        instructions += '\n';
+      if (parameterSummary.optionalCount > 0) {
+        instructions += `  optional params: ${parameterSummary.optionalCount} additional fields\n`;
       }
+    });
 
-      // Add example usage
-      // instructions += '**Example Usage**:\n\n';
-      // instructions += '```\n<use_mcp_tool>\n{\n';
-      // instructions += `  "tool": "${tool.name}",\n`;
-      // instructions += '  "args": {\n';
-
-      // Add example parameters based on schema
-      // if (schema.properties) {
-      //   const exampleParams = Object.entries(schema.properties).map(([paramName, paramDetails]: [string, any]) => {
-      //     let exampleValue = '';
-
-      //     // Generate example value based on type
-      //     switch (paramDetails.type) {
-      //       case 'string':
-      //         exampleValue = paramDetails.example || `"example_${paramName}"`;
-      //         break;
-      //       case 'number':
-      //         exampleValue = paramDetails.example || '42';
-      //         break;
-      //       case 'boolean':
-      //         exampleValue = paramDetails.example || 'true';
-      //         break;
-      //       case 'array':
-      //         exampleValue = paramDetails.example || '[]';
-      //         break;
-      //       case 'object':
-      //         exampleValue = paramDetails.example || '{}';
-      //         break;
-      //       default:
-      //         exampleValue = '"value"';
-      //     }
-
-      //     return `    "${paramName}": ${exampleValue}`;
-      //   });
-
-      //   instructions += exampleParams.join(',\n');
-      // }
-
-      // instructions += '\n  }\n}\n</use_mcp_tool>\n```\n\n';
-    } catch (error) {
-      // If schema parsing fails, provide a simpler example
-      instructions += 'Schema information not available. No Tools Available';
-      // instructions += '```\n<use_mcp_tool>\n{\n';
-      // instructions += `  "tool": "${tool.name}",\n`;
-      // instructions += '  "args": {}\n';
-      // instructions += '}\n</use_mcp_tool>\n```\n\n';
-    }
+    instructions += '\n';
   });
+
+  if (compactSkills.length > 0) {
+    instructions += '## OTHER AVAILABLE SKILLS\n\n';
+    compactSkills.forEach(bundle => {
+      instructions += `- ${bundle.name}: ${bundle.description} Tools: ${bundle.tools.map(tool => `\`${tool.name}\``).join(', ')}\n`;
+    });
+    instructions += '\n';
+  }
 
   // instructions += 'Print it exactly, there is a capturing tool which needs prinited text to run the tool manually\n\n';
 

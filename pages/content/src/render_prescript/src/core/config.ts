@@ -136,6 +136,14 @@ export const WEBSITE_CONFIGS: Array<{
       },
     },
     {
+      urlPattern: 'claude.ai',
+      config: {
+        targetSelectors: ['pre'],
+        streamingContainerSelectors: ['pre'],
+        function_result_selector: ['[data-testid="user-message"]', '[data-message-author-role="user"]'],
+      },
+    },
+    {
       urlPattern: 'kagi.com',
       config: {
         targetSelectors: ['.content pre', '.codehilite', 'pre'],

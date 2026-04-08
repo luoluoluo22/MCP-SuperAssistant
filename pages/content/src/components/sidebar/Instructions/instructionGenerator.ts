@@ -1,6 +1,7 @@
 // pages/content/src/utils/instructionGenerator.ts
 import { jsonSchemaToCsn } from './schema_converter';
 import { chatgptInstructions } from './website_specific_instruction/chatgpt';
+import { claudeInstructions } from './website_specific_instruction/claude';
 import { geminiInstructions } from './website_specific_instruction/gemini';
 import { createLogger } from '@extension/shared/lib/logger';
 
@@ -137,6 +138,11 @@ Do not use <thoughts> tag in your output, that is just output format reference t
   //# ChatGPT-Specific Instructions
   if (currentHost.includes('chatgpt')) {
     instructions += chatgptInstructions;
+  }
+
+  //# Claude-Specific Instructions
+  if (currentHost.includes('claude')) {
+    instructions += claudeInstructions;
   }
 
   // instructions += 'To use an MCP tool, wrap your tool call in `<use_mcp_tool>` tags like this:\n\n';

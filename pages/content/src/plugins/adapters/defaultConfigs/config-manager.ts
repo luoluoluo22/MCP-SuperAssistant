@@ -1,6 +1,7 @@
 import type { AdapterConfig, AdapterOverrides } from './types';
 import { GEMINI_DEFAULT_CONFIG } from './gemini.config';
 import { CHATGPT_DEFAULT_CONFIG } from './chatgpt.config';
+import { CLAUDE_DEFAULT_CONFIG } from './claude.config';
 import { createLogger } from '@extension/shared/lib/logger';
 
 /**
@@ -233,6 +234,8 @@ export class AdapterConfigManager {
         return { ...GEMINI_DEFAULT_CONFIG };
       case 'chatgpt':
         return { ...CHATGPT_DEFAULT_CONFIG };
+      case 'claude':
+        return { ...CLAUDE_DEFAULT_CONFIG };
       default:
         logger.warn(`No default config found for ${adapterName}, using Gemini defaults`);
         return { ...GEMINI_DEFAULT_CONFIG };

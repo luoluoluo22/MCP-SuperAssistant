@@ -36,7 +36,9 @@
     "copy_env": "bash bash-scripts/copy_env.sh",
     "set-global-env": "bash bash-scripts/set_global_env.sh",
     "postinstall": "pnpm build:eslint && pnpm copy_env",
-    "module-manager": "pnpm -F module-manager start"
+    "module-manager": "pnpm -F module-manager start",
+    "skill-loader": "node scripts/super-skill-loader.mjs",
+    "local-service": "node scripts/super-local-service.mjs"
   },
   "dependencies": {
     "react": "19.1.0",

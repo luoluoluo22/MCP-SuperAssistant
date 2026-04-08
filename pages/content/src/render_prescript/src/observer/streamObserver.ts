@@ -16,6 +16,7 @@ declare global {
 // Import required functions
 import { CONFIG } from '../core/config';
 import { renderFunctionCall } from '../renderer/index';
+import { findOriginalFunctionSourceElement } from '../renderer/components';
 import { extractParameters, containsFunctionCalls, extractLanguageTag } from '../parser/index';
 import { extractJSONParameters } from '../parser/jsonFunctionParser';
 
@@ -765,7 +766,7 @@ export const resyncWithOriginalContent = (blockId: string): void => {
   resyncingBlocks.add(blockId);
 
   // Find the original pre element
-  const originalPre = document.querySelector(`div[data-block-id="${blockId}"]`);
+  const originalPre = findOriginalFunctionSourceElement(blockId);
   if (!originalPre || !originalPre.textContent) {
     if (CONFIG.debug) {
       logger.debug(`Original pre element not found for block ${blockId}`);

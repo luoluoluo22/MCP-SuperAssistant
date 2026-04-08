@@ -15,6 +15,12 @@ export {
   type AutomationState,
   type ToolExecutionCompleteDetail
 } from './automation.service';
+export {
+  CloudSyncService,
+  cloudSyncService,
+  initializeCloudSyncService,
+  cleanupCloudSyncService,
+} from './cloudSync.service';
 
 // Export initialization function for all services
 export async function initializeAllServices(): Promise<void> {
@@ -24,6 +30,10 @@ export async function initializeAllServices(): Promise<void> {
     // Initialize automation service
     const { initializeAutomationService } = await import('./automation.service');
     initializeAutomationService();
+
+    // Initialize cloud sync service
+    const { initializeCloudSyncService } = await import('./cloudSync.service');
+    await initializeCloudSyncService();
     
     logger.debug('[Services] All services initialized successfully');
   } catch (error) {
@@ -40,6 +50,10 @@ export async function cleanupAllServices(): Promise<void> {
     // Cleanup automation service
     const { cleanupAutomationService } = await import('./automation.service');
     cleanupAutomationService();
+
+    // Cleanup cloud sync service
+    const { cleanupCloudSyncService } = await import('./cloudSync.service');
+    await cleanupCloudSyncService();
     
     logger.debug('[Services] All services cleaned up successfully');
   } catch (error) {

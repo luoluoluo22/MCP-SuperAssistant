@@ -32,6 +32,8 @@ const manifest = {
     '*://*.perplexity.ai/*',
     '*://*.chat.openai.com/*',
     '*://*.chatgpt.com/*',
+    '*://*.claude.ai/*',
+    '*://dav.jianguoyun.com/*',
     '*://*.grok.com/*',
     '*://*.x.com/*',
     '*://*.twitter.com/*',
@@ -47,6 +49,8 @@ const manifest = {
     '*://*.kimi.com/*',
     '*://*.chat.z.ai/*',
     '*://*.chat.qwen.ai/*',
+    'http://127.0.0.1/*',
+    'http://localhost/*',
 
   ],
 
@@ -83,6 +87,12 @@ const manifest = {
     // Specific content script for ChatGPT tool call parsing
     {
       matches: ['*://*.chat.openai.com/*', '*://*.chatgpt.com/*'],
+      js: ['content/index.iife.js'],
+      run_at: 'document_idle',
+    },
+    // Specific content script for Claude tool call parsing
+    {
+      matches: ['*://*.claude.ai/*'],
       js: ['content/index.iife.js'],
       run_at: 'document_idle',
     },

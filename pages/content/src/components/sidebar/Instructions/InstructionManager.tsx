@@ -8,6 +8,8 @@ import { Typography } from '../ui';
 import { cn } from '@src/lib/utils';
 import { logMessage } from '@src/utils/helpers';
 import { createLogger } from '@extension/shared/lib/logger';
+import { fetchExternalSkills } from './skillLoaderClient';
+import { buildSkillBundles, getBuiltinSkillTemplates, type SkillMetadata } from './skillRegistry';
 
 // Create a global shared state for instructions
 
@@ -117,6 +119,8 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
   const [copySuccess, setCopySuccess] = useState(false);
   const [insertSuccess, setInsertSuccess] = useState(false);
   const [attachSuccess, setAttachSuccess] = useState(false);
+  const [skillTemplates, setSkillTemplates] = useState<SkillMetadata[]>(() => getBuiltinSkillTemplates());
+  const [skillSource, setSkillSource] = useState<'global' | 'builtin'>('builtin');
 
   // Custom instructions state - get from preferences
   const [customInstructions, setCustomInstructions] = useState(preferences.customInstructions || '');
@@ -154,6 +158,27 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
     setCustomInstructionsEnabled(preferences.customInstructionsEnabled || false);
   }, [preferences]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchExternalSkills()
+      .then(externalSkills => {
+        if (cancelled || externalSkills.length === 0) return;
+        setSkillTemplates(externalSkills);
+        setSkillSource('global');
+        logMessage(`[InstructionManager] Loaded ${externalSkills.length} global skills from local MCP service`);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSkillTemplates(getBuiltinSkillTemplates());
+        setSkillSource('builtin');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Generate instructions with custom instructions - memoized to prevent excessive calls
   const generateCurrentInstructions = useCallback(() => {
     // return generateInstructions(enabledTools, customInstructions, customInstructionsEnabled);
@@ -162,13 +187,18 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
     //   return generateInstructions(enabledTools, customInstructions, customInstructionsEnabled);
     // }
 
-    return generateInstructionsJson(enabledTools, customInstructions, customInstructionsEnabled);
-  }, [enabledTools, customInstructions, customInstructionsEnabled]);
+    return generateInstructionsJson(enabledTools, customInstructions, customInstructionsEnabled, skillTemplates);
+  }, [enabledTools, customInstructions, customInstructionsEnabled, skillTemplates]);
 
   // Memoize the actual current instructions to prevent unnecessary re-calculations
   const currentInstructions = useMemo(() => {
     return generateCurrentInstructions();
   }, [generateCurrentInstructions]);
+
+  const skillBundles = useMemo(() => {
+    const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+    return buildSkillBundles(enabledTools, currentHost, skillTemplates);
+  }, [enabledTools, skillTemplates]);
 
   // Update instructions when tools or tool enablement changes or custom instructions change
   useEffect(() => {
@@ -465,6 +495,41 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
         </div>
 
         <div className="p-3 bg-white dark:bg-slate-900">
+          <div className="mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <Typography variant="h4" className="text-slate-700 dark:text-slate-300">
+                Loaded Skills
+              </Typography>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                {skillSource === 'global' ? '.super global skills' : 'bundled fallback skills'}
+              </span>
+            </div>
+            <div className="mt-2 space-y-2">
+              {skillBundles.length > 0 ? (
+                skillBundles.map(bundle => (
+                  <div
+                    key={bundle.id}
+                    className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{bundle.name}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{bundle.description}</div>
+                      </div>
+                      <div className="text-right text-xs text-slate-500 dark:text-slate-400">
+                        <div>{bundle.tools.length} tools</div>
+                        <div>{bundle.expanded ? 'expanded' : 'compact'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs italic text-slate-500 dark:text-slate-400">
+                  No skills matched the currently enabled tools.
+                </div>
+              )}
+            </div>
+          </div>
+
           {isEditing ? (
             <textarea
               value={instructions}
