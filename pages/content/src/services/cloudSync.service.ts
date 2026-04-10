@@ -212,7 +212,9 @@ export class CloudSyncService {
       const response = await this.requestViaBackground({
         url: dirUrl,
         method: 'MKCOL',
-        headers: {},
+        headers: {
+          Authorization: this.buildBasicAuthHeader(config),
+        },
       });
 
       if ([201, 301, 405].includes(response.status)) {
