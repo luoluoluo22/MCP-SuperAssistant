@@ -164,11 +164,11 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
     }
 
     if (hasBackgroundError) {
-      setStatusMessage('Extension background services unavailable. Try reloading the page.');
+      setStatusMessage('扩展后台服务不可用，请尝试刷新页面。');
     } else {
       switch (status) {
         case 'connected':
-          setStatusMessage('MCP Server is connected and ready');
+          setStatusMessage('MCP 服务已连接并就绪');
           // Brief success indication for new connections
           if (!isConnected) {
             setShowSuccessAnimation(true);
@@ -176,13 +176,13 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
           }
           break;
         case 'disconnected':
-          setStatusMessage('MCP Server is unavailable. Some features will be limited.');
+          setStatusMessage('MCP 服务不可用，部分功能将受限。');
           break;
         case 'error':
-          setStatusMessage(connectionError || 'Error connecting to extension services. Try reloading the page.');
+          setStatusMessage(connectionError || '连接扩展服务时出错，请尝试刷新页面。');
           break;
         default:
-          setStatusMessage('Checking MCP Server status...');
+          setStatusMessage('正在检查 MCP 服务状态...');
       }
     }
   }, [status, connectionError, hasBackgroundError, isReconnecting, storeIsReconnecting, isConnected]);
@@ -215,7 +215,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
     const unsubscribeBridgeInvalidated = eventBus.on('context:bridge-invalidated', (data) => {
       logMessage(`[ServerStatus] Context bridge invalidated: ${data.error}`);
       setHasBackgroundError(true);
-      setStatusMessage(`Extension context invalidated: ${data.error}`);
+      setStatusMessage(`扩展上下文失效：${data.error}`);
     });
     unsubscribeCallbacks.push(unsubscribeBridgeInvalidated);
 
@@ -251,7 +251,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
 
       if (!methodsAvailable && !hasBackgroundError) {
         setHasBackgroundError(true);
-        setStatusMessage('Extension background services unavailable. Try reloading the page.');
+        setStatusMessage('扩展后台服务不可用，请尝试刷新页面。');
       } else if (methodsAvailable && hasBackgroundError) {
         // Background methods have become available again
         setHasBackgroundError(false);
@@ -318,20 +318,20 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
     }
 
     if (hasBackgroundError) {
-      setStatusMessage('Extension background services unavailable. Try reloading the page.');
+      setStatusMessage('扩展后台服务不可用，请尝试刷新页面。');
     } else {
       switch (status) {
         case 'connected':
-          setStatusMessage('MCP Server is connected and ready');
+          setStatusMessage('MCP 服务已连接并就绪');
           break;
         case 'disconnected':
-          setStatusMessage('MCP Server is unavailable. Some features will be limited.');
+          setStatusMessage('MCP 服务不可用，部分功能将受限。');
           break;
         case 'error':
-          setStatusMessage('Error connecting to extension services. Try reloading the page.');
+          setStatusMessage('连接扩展服务时出错，请尝试刷新页面。');
           break;
         default:
-          setStatusMessage('Checking MCP Server status...');
+          setStatusMessage('正在检查 MCP 服务状态...');
       }
     }
   }, [status, hasBackgroundError, isReconnecting]);
@@ -343,7 +343,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
     try {
       logMessage('[ServerStatus] Reconnect button clicked');
       setIsReconnecting(true);
-      setStatusMessage('Attempting to reconnect to MCP server...');
+      setStatusMessage('正在尝试重新连接 MCP 服务...');
 
       // Check if we can connect to the background script first
       if (hasBackgroundError) {
@@ -379,7 +379,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
 
       // Set appropriate status message based on reconnection result
       if (success) {
-        setStatusMessage('Successfully reconnected to MCP server');
+        setStatusMessage('已成功重新连接到 MCP 服务');
         logMessage('[ServerStatus] Reconnection successful, fetching fresh tool list');
         try {
           const tools = await refreshTools(true);
@@ -390,7 +390,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
           );
         }
       } else {
-        setStatusMessage('Failed to reconnect to MCP server. Some features will be limited.');
+        setStatusMessage('重新连接 MCP 服务失败，部分功能将受限。');
       }
     } catch (error) {
       // Ensure minimum display time even for errors
@@ -410,20 +410,20 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
       // Display the enhanced error message in the status
       if (errorMessage.includes('404') || errorMessage.includes('not found')) {
         setStatusMessage(
-          'Server URL not found (404). Please verify your MCP server URL and ensure the server is running.',
+          '未找到服务器地址（404）。请确认 MCP 服务地址正确且服务正在运行。',
         );
       } else if (errorMessage.includes('403')) {
-        setStatusMessage('Access forbidden (403). Please check server permissions and authentication settings.');
+        setStatusMessage('访问被拒绝（403）。请检查服务器权限和认证配置。');
       } else if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
-        setStatusMessage('Server error detected. The MCP server may be experiencing issues.');
+        setStatusMessage('检测到服务器错误，MCP 服务可能存在异常。');
       } else if (errorMessage.includes('Connection refused') || errorMessage.includes('ECONNREFUSED')) {
-        setStatusMessage('Connection refused. Please verify the MCP server is running at the configured URL.');
+        setStatusMessage('连接被拒绝。请确认配置地址上的 MCP 服务已经启动。');
       } else if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
-        setStatusMessage('Connection timeout. The server may be slow to respond or unreachable.');
+        setStatusMessage('连接超时。服务器可能响应缓慢或当前不可达。');
       } else if (errorMessage.includes('ENOTFOUND')) {
-        setStatusMessage('Server not found. Please check the server URL and your network connection.');
+        setStatusMessage('未找到服务器。请检查服务地址和网络连接。');
       } else {
-        setStatusMessage(`Connection failed: ${errorMessage}`);
+        setStatusMessage(`连接失败：${errorMessage}`);
       }
     } finally {
       setIsReconnecting(false);
@@ -485,7 +485,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
     setLastReconnectTime(new Date().toLocaleTimeString());
 
     // Use a single stable message throughout the process to prevent flickers
-    const stableMessage = 'Saving configuration and connecting...';
+    const stableMessage = '正在保存配置并连接...';
     setStatusMessage(stableMessage);
 
     // Clear any existing error
@@ -524,7 +524,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
 
       // Single final UI update to prevent flickers
       if (success) {
-        setStatusMessage('Successfully connected to MCP server');
+        setStatusMessage('已成功连接到 MCP 服务');
 
         // Refresh tools silently without UI updates
         try {
@@ -536,7 +536,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
           );
         }
       } else {
-        setStatusMessage('Failed to connect to new MCP server');
+        setStatusMessage('连接新的 MCP 服务失败');
       }
 
       // Close settings on success
@@ -552,7 +552,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
 
       const errorMessage = error instanceof Error ? error.message : String(error);
       setLastErrorMessage(errorMessage);
-      setStatusMessage(`Configuration failed: ${errorMessage}`);
+      setStatusMessage(`配置失败：${errorMessage}`);
       logMessage(`[ServerStatus] Save config error: ${errorMessage}`);
       // Keep settings open on error
     } finally {
@@ -580,21 +580,21 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
           color: baseColors.emerald.text,
           bgColor: cn(baseColors.emerald.bg, baseColors.emerald.darkBg),
           icon: <Icon name="check" className={baseColors.emerald.text} />,
-          label: 'Connected',
+          label: '已连接',
         };
       case 'reconnecting':
         return {
           color: baseColors.amber.text,
           bgColor: cn(baseColors.amber.bg, baseColors.amber.darkBg),
           icon: <Icon name="refresh" className={cn(baseColors.amber.text, 'animate-spin')} />,
-          label: 'Reconnecting',
+          label: '重连中',
         };
       case 'disconnected':
         return {
           color: baseColors.rose.text,
           bgColor: cn(baseColors.rose.bg, baseColors.rose.darkBg),
           icon: <Icon name="x" className={baseColors.rose.text} />,
-          label: 'Disconnected',
+          label: '未连接',
         };
       case 'error':
         return {
@@ -656,7 +656,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                     ? 'text-emerald-700 dark:text-emerald-400'
                     : 'text-slate-700 dark:text-slate-200',
               )}>
-              Server {statusInfo.label}
+              服务{statusInfo.label}
             </Typography>
 
             {/* Status message with stable height to prevent layout shifts */}
@@ -685,8 +685,8 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                 ? 'text-rose-600 hover:text-rose-700 hover:bg-rose-100 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-900/30'
                 : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30',
             )}
-            aria-label="Reconnect to server"
-            title="Reconnect to server">
+            aria-label="重新连接服务器"
+            title="重新连接服务器">
             <Icon
               name="refresh"
               size="sm"
@@ -705,8 +705,8 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
               'group relative p-2 rounded-lg transition-all duration-200 ease-out hover:scale-105 active:scale-95',
               'text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:shadow-md dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800',
             )}
-            aria-label="Server settings"
-            title="Server settings">
+            aria-label="服务器设置"
+            title="服务器设置">
             <Icon
               name="settings"
               size="sm"
@@ -722,8 +722,8 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
               'group relative p-2 rounded-lg transition-all duration-200 ease-out hover:scale-105 active:scale-95',
               'text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:shadow-md dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800',
             )}
-            aria-label="Show details"
-            title="Show details">
+            aria-label="显示详情"
+            title="显示详情">
             <Icon name="info" size="sm" className="transition-transform duration-200 group-hover:scale-110" />
           </button>
         </div>
@@ -737,13 +737,13 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
             <div className="flex-1">
               <Typography variant="small" className="text-rose-600 dark:text-rose-400 font-medium">
                 {status === 'disconnected'
-                  ? 'Server connection lost. Click the refresh button to reconnect.'
-                  : 'Server connection error. Check your configuration and try again.'}
+                  ? '服务器连接已断开，点击刷新按钮重新连接。'
+                  : '服务器连接异常，请检查配置后重试。'}
               </Typography>
               {/* Show detailed error message if available - prefer background error over local error */}
               {(backgroundConnectionError || lastErrorMessage) && (
                 <Typography variant="small" className="text-rose-500 dark:text-rose-300 mt-1 text-xs">
-                  Details: {backgroundConnectionError || lastErrorMessage}
+                  详情：{backgroundConnectionError || lastErrorMessage}
                 </Typography>
               )}
             </div>
@@ -756,7 +756,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
           <div className="flex items-center space-x-2">
             <div className="animate-spin w-3 h-3 border border-amber-500 border-t-transparent rounded-full"></div>
             <Typography variant="caption" className="text-amber-700 dark:text-amber-300 text-xs">
-              Connecting to extension services...
+              正在连接扩展服务...
             </Typography>
           </div>
         </div>
@@ -768,12 +768,12 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
           <Card className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
             <CardContent className="p-4 text-xs text-slate-700 dark:text-slate-300">
               <Typography variant="h4" className="mb-3 text-slate-800 dark:text-slate-100 font-semibold">
-                Server Configuration
+                服务器配置
               </Typography>
               
               <div className="mb-4">
                 <label htmlFor="connection-type" className="block mb-2 text-slate-600 dark:text-slate-400 font-medium">
-                  Connection Type
+                  连接方式
                 </label>
                 <select
                   id="connection-type"
@@ -789,16 +789,16 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                 </select>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {connectionType === 'sse' 
-                    ? 'HTTP-based streaming connection (traditional)' 
+                    ? '基于 HTTP 的流式连接（传统模式）' 
                     : connectionType === 'websocket'
-                      ? 'Full-duplex WebSocket connection (faster, more features)'
-                      : 'Advanced HTTP streaming (modern MCP protocol)'}
+                      ? '全双工 WebSocket 连接（更快，功能更多）'
+                      : '高级 HTTP 流式连接（现代 MCP 协议）'}
                 </p>
               </div>
 
               <div className="mb-4">
                 <label htmlFor="server-uri" className="block mb-2 text-slate-600 dark:text-slate-400 font-medium">
-                  Server URI
+                  服务器地址
                 </label>
                 <input
                   id="server-uri"
@@ -816,24 +816,24 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                 />
                 <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   <div className="mb-2">
-                    <strong>To start MCP SuperAssistant Proxy:</strong>
+                    <strong>启动 MCP SuperAssistant Proxy：</strong>
                   </div>
                   <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded font-mono text-xs border">
                     npx @srbhptl39/mcp-superassistant-proxy@latest --config ./config.json --outputTransport {connectionType === 'sse' ? 'sse' : connectionType === 'websocket' ? 'ws' : 'streamableHttp'}
                   </div>
                   <div className="mt-2 text-xs">
                     <div className="mb-1">
-                      Available transports: <code>streamableHttp</code>, <code>sse</code>, <code>ws</code>
+                      可用传输方式：<code>streamableHttp</code>、<code>sse</code>、<code>ws</code>
                     </div>
                     <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                      <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">📡 Public Endpoints Supported:</div>
+                      <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">📡 支持的公网端点：</div>
                       <div className="text-blue-700 dark:text-blue-300 space-y-1">
-                        <div>• <strong>Zapier:</strong> Public MCP endpoints with CORS enabled</div>
-                        <div>• <strong>Composio:</strong> SSE and Streamable HTTP endpoints</div>
-                        <div>• <strong>Custom servers:</strong> Any MCP server with CORS headers</div>
+                        <div>• <strong>Zapier：</strong> 已开启 CORS 的公网 MCP 端点</div>
+                        <div>• <strong>Composio：</strong> SSE 和 Streamable HTTP 端点</div>
+                        <div>• <strong>自定义服务：</strong> 任意带 CORS 头的 MCP 服务</div>
                       </div>
                       <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                        <strong>Note:</strong> WebSocket connections require local servers or proxy due to browser security restrictions.
+                        <strong>注意：</strong> 受浏览器安全限制，WebSocket 连接通常需要本地服务或代理。
                       </div>
                     </div>
                     {/* <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
@@ -868,7 +868,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                   variant="outline"
                   size="sm"
                   className="h-8 px-3 text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95">
-                  Cancel
+                  取消
                 </Button>
                 <Button
                   onClick={handleSaveServerConfig}
@@ -879,10 +879,10 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                   {isReconnecting ? (
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Connecting...
+                      连接中...
                     </div>
                   ) : (
-                    'Save & Reconnect'
+                    '保存并重连'
                   )}
                 </Button>
               </div>
@@ -891,7 +891,7 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ status: initialStatus }) =>
                 <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200">
                   <div className="flex items-center gap-2">
                     <Icon name="alert-triangle" size="sm" className="text-rose-600 dark:text-rose-400" />
-                    <p className="font-medium">Extension background services unavailable. Try reloading the page.</p>
+                    <p className="font-medium">扩展后台服务不可用，请尝试刷新页面。</p>
                   </div>
                 </div>
               )}

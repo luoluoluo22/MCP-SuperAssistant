@@ -399,7 +399,7 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
         <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Typography variant="h4" className="text-slate-700 dark:text-slate-300">
-              Custom Instructions
+              自定义提示词
             </Typography>
             <label className="flex items-center gap-1.5">
               <input
@@ -408,20 +408,20 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
                 onChange={e => handleCustomInstructionsToggle(e.target.checked)}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
-              <span className="text-xs text-slate-600 dark:text-slate-400">Enable</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400">启用</span>
             </label>
           </div>
           <div className="flex items-center gap-1.5">
             {isEditingCustom ? (
               <>
-                <ActionButton onClick={handleCustomInstructionsSave} color="green" label="Save" />
-                <ActionButton onClick={handleCustomInstructionsCancel} color="red" label="Cancel" />
+                <ActionButton onClick={handleCustomInstructionsSave} color="green" label="保存" />
+                <ActionButton onClick={handleCustomInstructionsCancel} color="red" label="取消" />
               </>
             ) : (
               <ActionButton
                 onClick={() => setIsEditingCustom(true)}
                 color="blue"
-                label="Edit"
+                label="编辑"
                 disabled={!customInstructionsEnabled}
               />
             )}
@@ -433,7 +433,7 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
             <textarea
               value={customInstructions}
               onChange={e => setCustomInstructions(e.target.value)}
-              placeholder="Enter your custom instructions here..."
+              placeholder="在这里输入你的自定义提示词..."
               className="w-full h-32 p-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200"
             />
           ) : (
@@ -444,7 +444,7 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
                 </pre>
               ) : (
                 <div className="text-xs text-slate-500 dark:text-slate-400 italic p-3">
-                  {customInstructionsEnabled ? 'No custom instructions set' : 'Custom instructions disabled'}
+                  {customInstructionsEnabled ? '还没有设置自定义提示词' : '自定义提示词已关闭'}
                 </div>
               )}
             </div>
@@ -456,17 +456,17 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
       <div className="rounded-lg bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 sidebar-card">
         <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <Typography variant="h4" className="text-slate-700 dark:text-slate-300">
-            Instructions
+            提示词
           </Typography>
           <div className="flex items-center gap-1.5">
             {isEditing ? (
               <>
-                <ActionButton onClick={handleSave} color="green" label="Save" />
-                <ActionButton onClick={handleCancel} color="red" label="Cancel" />
+                <ActionButton onClick={handleSave} color="green" label="保存" />
+                <ActionButton onClick={handleCancel} color="red" label="取消" />
               </>
             ) : (
               <>
-                <ActionButton onClick={() => setIsEditing(true)} color="blue" label="Edit" />
+                <ActionButton onClick={() => setIsEditing(true)} color="blue" label="编辑" />
                 {/* <ActionButton 
                   onClick={handleCopyToClipboard} 
                   loading={isCopying}
@@ -498,10 +498,10 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
           <div className="mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 p-3">
             <div className="flex items-center justify-between gap-3">
               <Typography variant="h4" className="text-slate-700 dark:text-slate-300">
-                Loaded Skills
+                已加载技能
               </Typography>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                {skillSource === 'global' ? '.super global skills' : 'bundled fallback skills'}
+                {skillSource === 'global' ? '.super 全局技能' : '内置兜底技能'}
               </span>
             </div>
             <div className="mt-2 space-y-2">
@@ -516,15 +516,15 @@ const InstructionManager: React.FC<InstructionManagerProps> = ({ adapter, tools 
                         <div className="text-xs text-slate-500 dark:text-slate-400">{bundle.description}</div>
                       </div>
                       <div className="text-right text-xs text-slate-500 dark:text-slate-400">
-                        <div>{bundle.tools.length} tools</div>
-                        <div>{bundle.expanded ? 'expanded' : 'compact'}</div>
+                        <div>{bundle.tools.length} 个工具</div>
+                        <div>{bundle.expanded ? '展开模式' : '紧凑模式'}</div>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-xs italic text-slate-500 dark:text-slate-400">
-                  No skills matched the currently enabled tools.
+                  当前启用的工具没有匹配到技能。
                 </div>
               )}
             </div>

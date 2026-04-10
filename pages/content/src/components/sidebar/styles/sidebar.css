@@ -12,7 +12,7 @@
 
 /* Prevent any flash during initial loading */
 .sidebar.initial-render.collapsed {
-  width: 56px !important;
+  width: 48px !important;
   transition: none !important;
 }
 
@@ -134,9 +134,20 @@
 
 /* Collapsed state */
 .sidebar.collapsed {
-  width: 56px;
+  width: 48px;
+  height: 48px;
+  top: calc(50vh - 24px);
+  right: 16px;
+  border-left: none;
+  border-radius: 999px;
   overflow: hidden;
-  transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.24);
+  transition:
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    top 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    right 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Push mode */
@@ -170,6 +181,20 @@
   transition-delay: 0s;
 }
 
+.sidebar.collapsed .sidebar-header {
+  min-height: 48px;
+  height: 48px;
+  padding: 0;
+  justify-content: center;
+  border-bottom: none;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96));
+}
+
+.sidebar.collapsed .sidebar-header button {
+  width: 48px;
+  height: 48px;
+}
+
 /* Content revealing animation */
 .sidebar:not(.collapsed) .sidebar-inner-content {
   opacity: 1;
@@ -198,9 +223,9 @@
 
 @media (max-width: 768px) {
   .sidebar.initial-render.collapsed {
-    width: 44px !important;
-    height: 52px !important;
-    top: calc(50vh - 26px) !important;
+    width: 40px !important;
+    height: 48px !important;
+    top: calc(50vh - 24px) !important;
     right: 10px !important;
     border-left: none !important;
     border-radius: 999px !important;
@@ -209,9 +234,9 @@
   }
 
   .sidebar.collapsed {
-    width: 44px;
-    height: 52px;
-    top: calc(50vh - 26px);
+    width: 40px;
+    height: 48px;
+    top: calc(50vh - 24px);
     right: 10px;
     border-left: none;
     border-radius: 999px;
@@ -226,8 +251,8 @@
   }
 
   .sidebar.collapsed .sidebar-header {
-    min-height: 52px;
-    height: 52px;
+    min-height: 48px;
+    height: 48px;
     padding: 0;
     justify-content: center;
     border-bottom: none;
@@ -235,8 +260,8 @@
   }
 
   .sidebar.collapsed .sidebar-header button {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
 
   .sidebar:not(.collapsed) {
@@ -247,15 +272,15 @@
   }
 
   [data-initial-minimized="true"] {
-    width: 44px !important;
-    max-width: 44px !important;
+    width: 40px !important;
+    max-width: 40px !important;
   }
 
   [data-initial-minimized="true"] .sidebar {
-    width: 44px !important;
-    max-width: 44px !important;
-    height: 52px !important;
-    top: calc(50vh - 26px) !important;
+    width: 40px !important;
+    max-width: 40px !important;
+    height: 48px !important;
+    top: calc(50vh - 24px) !important;
     right: 10px !important;
     border-left: none !important;
     border-radius: 999px !important;

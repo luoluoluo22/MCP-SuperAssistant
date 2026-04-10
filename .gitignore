@@ -64,6 +64,7 @@ bun.lock
 commit_diff.patch
 dist-mobile-packages/
 web-extension.crx
+SERVER_NOTES_LOCAL.md
 DYNAMIC_THEMING.md
 file_structure.md
 FIREBASE_REMOTE_CONFIG_ADAPTER_INTEGRATION.md
@@ -93,3 +94,6 @@ pages/content/src/utils/migration-bridge.ts
 pages/content/src/utils/siteAdapter.ts
 pages/content/src/utils/themeDetector.ts
 clients.md
+
+# AI Assistant Memory
+.superassistant/

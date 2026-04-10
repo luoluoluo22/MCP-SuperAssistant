@@ -252,14 +252,14 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
             <button
               onClick={toggleComponentExpansion}
               className="p-1 mr-2 rounded transition-colors bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600"
-              aria-label={isExpanded ? 'Collapse tools' : 'Expand tools'}>
+              aria-label={isExpanded ? '收起工具' : '展开工具'}>
               <Icon
                 name="chevron-right"
                 size="sm"
                 className={cn('text-slate-600 dark:text-slate-300 transition-transform', isExpanded ? 'rotate-90' : '')}
               />
             </button>
-            <Typography variant="h3">Available Tools</Typography>
+            <Typography variant="h3">可用工具</Typography>
           </div>
           <Button
             onClick={handleRefresh}
@@ -270,7 +270,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
               'h-9 w-9 p-0',
               isRefreshing ? 'opacity-50' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600',
             )}
-            aria-label="Refresh tools">
+            aria-label="刷新工具">
             <Icon
               name="refresh"
               size="sm"
@@ -283,7 +283,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-2">
               <Typography variant="small" className="text-slate-600 dark:text-slate-400">
-                {enabledTools.size} of {totalToolsCount} tools enabled
+                已启用 {enabledTools.size} / {totalToolsCount} 个工具
               </Typography>
             </div>
             <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                 variant="outline"
                 disabled={isRefreshing || isLoadingEnablement || totalToolsCount === 0}
                 className="h-8 px-3 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
-                Enable All
+                全部启用
               </Button>
               <Button
                 onClick={handleDisableAll}
@@ -301,7 +301,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                 variant="outline"
                 disabled={isRefreshing || isLoadingEnablement || totalToolsCount === 0}
                 className="h-8 px-3 text-xs bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
-                Disable All
+                全部禁用
               </Button>
               {hasUnsavedChanges && (
                 <>
@@ -310,14 +310,14 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                     size="sm"
                     variant="outline"
                     className="h-8 px-3 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                    Save Changes
+                    保存更改
                   </Button>
                   <Button
                     onClick={handleDiscardChanges}
                     size="sm"
                     variant="outline"
                     className="h-8 px-3 text-xs bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800">
-                    Discard
+                    放弃更改
                   </Button>
                 </>
               )}
@@ -332,7 +332,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search tools..."
+                placeholder="搜索工具..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="w-full px-3 py-2 pl-10 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
@@ -347,7 +347,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
             <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400">
               <Icon name="refresh" className="w-8 h-8 animate-spin mr-3" />
               <Typography variant="body" className="text-lg">
-                {isRefreshing ? 'Refreshing tools...' : 'Loading tool preferences...'}
+                {isRefreshing ? '正在刷新工具...' : '正在加载工具偏好...'}
               </Typography>
             </div>
           )}
@@ -358,10 +358,10 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                 <>
                   <Icon name="search" className="w-12 h-12 mx-auto mb-3" />
                   <Typography variant="body" className="text-lg">
-                    No tools match your search
+                    没有匹配当前搜索的工具
                   </Typography>
                   <Typography variant="small" className="mt-1">
-                    Try a different search term
+                    试试别的关键词
                   </Typography>
                 </>
               ) : (
@@ -380,20 +380,20 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                     />
                   </svg>
                   <Typography variant="body" className="text-lg">
-                    {!isLoaded ? 'Loading tools...' : 'No tools available'}
+                    {!isLoaded ? '正在加载工具...' : '暂无可用工具'}
                   </Typography>
                   <Typography variant="small" className="mt-1">
                     {isLoaded ? (
                       <>
-                        Check your server connection or{' '}
+                        请检查服务器连接或{' '}
                         <button
                           onClick={handleRefresh}
                           className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
-                          refresh
+                          刷新
                         </button>
                       </>
                     ) : (
-                      'Please wait while we connect to the server'
+                      '正在连接服务器，请稍候'
                     )}
                   </Typography>
                 </>
@@ -418,7 +418,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                           <button
                             onClick={() => toggleToolExpansion(serverName)}
                             className="p-1 mr-2 rounded transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
-                            aria-label={groupExpanded ? 'Collapse group' : 'Expand group'}>
+                            aria-label={groupExpanded ? '收起分组' : '展开分组'}>
                             <Icon
                               name="chevron-right"
                               size="sm"
@@ -441,18 +441,18 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                             {serverName}
                           </Typography>
                           <Typography variant="small" className="ml-2 text-slate-500 dark:text-slate-400">
-                            ({tools.length} tools)
+                            （{tools.length} 个工具）
                           </Typography>
                         </div>
                         <div className="flex items-center gap-2">
                           {groupPartiallyEnabled && (
                             <span className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded">
-                              Partial
+                              部分启用
                             </span>
                           )}
                           {!groupEnabled && !groupPartiallyEnabled && (
                             <span className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">
-                              Disabled
+                              已禁用
                             </span>
                           )}
                         </div>
@@ -511,7 +511,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                                   </Typography>
                                   {!isEnabled && (
                                     <span className="ml-2 px-2 py-0.5 text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">
-                                      Disabled
+                                      已禁用
                                     </span>
                                   )}
                                 </div>
@@ -543,7 +543,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                                           ? "text-slate-500 dark:text-slate-400"
                                           : "text-slate-400 dark:text-slate-500"
                                       )}>
-                                      Schema
+                                      参数结构
                                     </Typography>
                                     <pre className={cn(
                                       "text-xs p-2 whitespace-pre-wrap max-h-60 overflow-y-auto rounded border",
@@ -554,14 +554,14 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                                       {(() => {
                                         try {
                                           const schema = (tool as any).schema || (tool as any).input_schema;
-                                          if (!schema) return 'No schema available';
+                                          if (!schema) return '暂无参数结构';
 
                                           const schemaObject = typeof schema === 'string' ? JSON.parse(schema) : schema;
                                           return JSON.stringify(schemaObject, null, 2);
                                         } catch (error) {
                                           logger.error('Error processing tool schema:', error);
                                           const schema = (tool as any).schema || (tool as any).input_schema;
-                                          return typeof schema === 'string' ? schema : 'Invalid schema format';
+                                          return typeof schema === 'string' ? schema : '参数结构格式无效';
                                         }
                                       })()}
                                     </pre>
@@ -582,10 +582,10 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                 <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
                   <div className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-3">
                     <Typography variant="body" className="text-slate-800 dark:text-slate-200 font-semibold">
-                      Individual Tools
+                      独立工具
                     </Typography>
                     <Typography variant="small" className="text-slate-500 dark:text-slate-400">
-                      ({ungroupedTools.length} tools)
+                      （{ungroupedTools.length} 个工具）
                     </Typography>
                   </div>
                   <div className="bg-white dark:bg-slate-900">
@@ -636,7 +636,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                               </Typography>
                               {!isEnabled && (
                                 <span className="ml-2 px-2 py-0.5 text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">
-                                  Disabled
+                                  已禁用
                                 </span>
                               )}
                             </div>
@@ -668,7 +668,7 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                                       ? "text-slate-500 dark:text-slate-400"
                                       : "text-slate-400 dark:text-slate-500"
                                   )}>
-                                  Schema
+                                  参数结构
                                 </Typography>
                                 <pre className={cn(
                                   "text-xs p-2 whitespace-pre-wrap max-h-60 overflow-y-auto rounded border",
@@ -679,14 +679,14 @@ const AvailableTools: React.FC<AvailableToolsProps> = ({ tools, onExecute, onRef
                                   {(() => {
                                     try {
                                       const schema = (tool as any).schema || (tool as any).input_schema;
-                                      if (!schema) return 'No schema available';
+                                      if (!schema) return '暂无参数结构';
 
                                       const schemaObject = typeof schema === 'string' ? JSON.parse(schema) : schema;
                                       return JSON.stringify(schemaObject, null, 2);
                                     } catch (error) {
                                       logger.error('Error processing tool schema:', error);
                                       const schema = (tool as any).schema || (tool as any).input_schema;
-                                      return typeof schema === 'string' ? schema : 'Invalid schema format';
+                                      return typeof schema === 'string' ? schema : '参数结构格式无效';
                                     }
                                   })()}
                                 </pre>

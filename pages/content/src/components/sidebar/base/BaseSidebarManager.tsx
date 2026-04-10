@@ -10,7 +10,7 @@ import {
 } from '@src/utils/shadowDom';
 import '@src/components/sidebar/styles/sidebar.css';
 
-const getMinimizedSidebarWidth = () => (window.innerWidth <= 768 ? 44 : 56);
+const getMinimizedSidebarWidth = () => (window.innerWidth <= 768 ? 40 : 48);
 const isMobileViewport = () => window.innerWidth <= 768;
 
 /**
@@ -63,17 +63,18 @@ export abstract class BaseSidebarManager {
     if (isCollapsed) {
       const minimizedWidth = getMinimizedSidebarWidth();
       this.shadowHost.style.width = `${minimizedWidth}px`;
+      this.shadowHost.style.pointerEvents = 'auto';
 
       if (isMobileViewport()) {
-        this.shadowHost.style.height = '52px';
-        this.shadowHost.style.top = 'calc(50vh - 26px)';
+        this.shadowHost.style.height = '48px';
+        this.shadowHost.style.top = 'calc(50vh - 24px)';
         this.shadowHost.style.right = '10px';
         this.shadowHost.style.borderRadius = '999px';
       } else {
-        this.shadowHost.style.height = '100vh';
-        this.shadowHost.style.top = '0';
-        this.shadowHost.style.right = '0';
-        this.shadowHost.style.borderRadius = '0';
+        this.shadowHost.style.height = '48px';
+        this.shadowHost.style.top = 'calc(50vh - 24px)';
+        this.shadowHost.style.right = '16px';
+        this.shadowHost.style.borderRadius = '999px';
       }
       return;
     }
@@ -83,6 +84,7 @@ export abstract class BaseSidebarManager {
     this.shadowHost.style.top = '0';
     this.shadowHost.style.right = '0';
     this.shadowHost.style.borderRadius = '0';
+    this.shadowHost.style.pointerEvents = 'none';
   }
 
   /**

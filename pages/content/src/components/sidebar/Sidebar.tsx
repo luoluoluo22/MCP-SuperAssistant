@@ -30,8 +30,9 @@ type Theme = 'light' | 'dark' | 'system';
 const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']; // Define the cycle order
 
 // Define a constant for minimized width (should match BaseSidebarManager and CSS logic)
-const SIDEBAR_MINIMIZED_WIDTH = 56;
-const SIDEBAR_MINIMIZED_WIDTH_MOBILE = 44;
+const SIDEBAR_MINIMIZED_WIDTH = 48;
+const SIDEBAR_MINIMIZED_WIDTH_MOBILE = 40;
+const SIDEBAR_MINIMIZED_HEIGHT = 48;
 const SIDEBAR_DEFAULT_WIDTH = 320;
 
 interface SidebarProps {
@@ -268,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
   const isMinimized = storeSidebarMinimized ?? (initialPreferences?.isMinimized ?? false);
   const sidebarWidth = storeSidebarWidth || initialPreferences?.sidebarWidth || SIDEBAR_DEFAULT_WIDTH;
   const minimizedWidth = getMinimizedWidth();
-  const isMobileCollapsed = isMinimized && window.innerWidth <= 768;
+  const isCollapsedToFloating = isMinimized;
   const isPushMode = preferences.isPushMode ?? initialPreferences?.isPushMode ?? false;
   const autoSubmit = preferences.autoSubmit ?? initialPreferences?.autoSubmit ?? false;
 
@@ -440,9 +441,9 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                 `[Sidebar] Applying push mode (${isPushMode}, minimized: ${isMinimized}) and width (${sidebarWidth})`
               );
                 sidebarManager.setPushContentMode(
-                  isPushMode,
-                isMinimized ? minimizedWidth : sidebarWidth,
-                  isMinimized,
+                  isPushMode && !isMinimized,
+                  sidebarWidth,
+                  false,
                 );
             } else {
               // Ensure push mode is disabled when sidebar is hidden
@@ -654,7 +655,8 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
     }
   };
 
-  if (isMobileCollapsed) {
+  if (isCollapsedToFloating) {
+    const isMobileViewport = window.innerWidth <= 768;
     return (
       <div
         ref={sidebarRef}
@@ -664,9 +666,9 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
         )}
         style={{
           width: `${minimizedWidth}px`,
-          height: '52px',
-          top: 'calc(50vh - 26px)',
-          right: '10px',
+          height: isMobileViewport ? '48px' : `${SIDEBAR_MINIMIZED_HEIGHT}px`,
+          top: isMobileViewport ? 'calc(50vh - 24px)' : 'calc(50vh - 24px)',
+          right: isMobileViewport ? '10px' : '16px',
           borderRadius: '999px',
           overflow: 'hidden',
           background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96))',
@@ -676,7 +678,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
         <button
           type="button"
           onClick={handleToggleMinimize}
-          aria-label="Expand sidebar"
+          aria-label="展开侧边栏"
           className="flex h-full w-full items-center justify-center bg-transparent text-slate-100">
           <Icon name="chevron-left" className="h-4 w-4 text-slate-100" />
         </button>
@@ -696,10 +698,10 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
       )}
       style={{
         width: isMinimized ? `${minimizedWidth}px` : `${sidebarWidth}px`,
-        height: isMobileCollapsed ? '52px' : '100vh',
-        top: isMobileCollapsed ? 'calc(50vh - 26px)' : '0',
-        right: isMobileCollapsed ? '10px' : '0',
-        borderRadius: isMobileCollapsed ? '999px' : '0',
+        height: '100vh',
+        top: '0',
+        right: '0',
+        borderRadius: '0',
       }}>
       {/* Resize Handle - only visible when not minimized */}
       {!isMinimized && (
@@ -721,7 +723,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                 href="https://mcpsuperassistant.ai/"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Visit MCP Super Assistant Website"
+                aria-label="访问 MCP SuperAssistant 官网"
                 className="block">
                 {' '}
                 {/* Make link block for sizing */}
@@ -738,7 +740,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-slate-800 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-150 no-underline"
-                  aria-label="Visit MCP Super Assistant Website">
+                  aria-label="访问 MCP SuperAssistant 官网">
                   <Typography variant="h4" className="font-semibold">
                     MCP SuperAssistant
                   </Typography>
@@ -760,23 +762,14 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                 variant="ghost"
                 size="icon"
                 onClick={handleThemeToggle}
-                aria-label={`Toggle theme (current: ${theme})`}
+                aria-label={`切换主题（当前：${theme}）`}
                 className="hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all duration-200 hover:scale-105">
                 <Icon
                   name={getCurrentThemeIcon()}
                   size="sm"
                   className="transition-all text-indigo-600 dark:text-indigo-400"
                 />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-              {/* Minimize Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleToggleMinimize}
-                aria-label="Minimize sidebar"
-                className="hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all duration-200 hover:scale-105">
-                <Icon name="chevron-right" className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+                <span className="sr-only">切换主题</span>
               </Button>
             </div>
           </>
@@ -786,7 +779,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
             variant="ghost"
             size="icon"
             onClick={handleToggleMinimize}
-            aria-label="Expand sidebar"
+            aria-label="展开侧边栏"
             className="mx-auto hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all duration-200 hover:scale-110">
             <Icon name="chevron-left" className="h-4 w-4 text-slate-700 dark:text-slate-300" />
           </Button>
@@ -813,12 +806,12 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                     <Icon name="alert-triangle" size="sm" className="text-red-600 dark:text-red-400 mt-0.5" />
                     <div className="flex-1">
                       <Typography variant="subtitle" className="text-red-800 dark:text-red-200 font-medium">
-                        {extensionContextInvalid ? 'Extension Reloaded' : 'Warning'}
+                        {extensionContextInvalid ? '扩展已重新加载' : '提示'}
                       </Typography>
                       <Typography variant="caption" className="text-red-700 dark:text-red-300">
                         {extensionContextInvalid
-                          ? 'The extension was reloaded. Please refresh this page to restore full functionality.'
-                          : `Some features may be limited: ${initializationError}`
+                          ? '扩展已重新加载，请刷新页面以恢复完整功能。'
+                          : `部分功能可能受限：${initializationError}`
                         }
                       </Typography>
                       {extensionContextInvalid && (
@@ -828,7 +821,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                             size="sm"
                             onClick={() => window.location.reload()}
                             className="border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-800 mr-2">
-                            Refresh Page
+                            刷新页面
                           </Button>
                         </div>
                       )}
@@ -840,7 +833,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                       size="sm"
                       onClick={() => setInitializationError(null)}
                       className="border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-800">
-                      Dismiss
+                      关闭
                     </Button>
                   )}
                 </div>
@@ -856,10 +849,10 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                 <CardContent className="p-3 space-y-3">
                   <div className="flex items-center justify-between">
                     <Typography variant="subtitle" className="text-slate-700 dark:text-slate-300 font-medium">
-                      Push Content Mode
+                      推开页面内容
                     </Typography>
                     <ToggleWithoutLabel
-                      label="Push Content Mode"
+                      label="推开页面内容"
                       checked={isPushMode}
                       onChange={handlePushModeToggle}
                     />
@@ -890,7 +883,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                           logMessage('Cannot debug: Shadow DOM not found');
                         }
                       }}>
-                      Debug Styles
+                      调试样式
                     </Button>
                   )}
                 </CardContent>
@@ -907,7 +900,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-t-lg',
                     )}
                     onClick={() => setActiveTab('availableTools')}>
-                    Available Tools
+                    可用工具
                   </button>
                   <button
                     className={cn(
@@ -917,7 +910,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-t-lg',
                     )}
                     onClick={() => setActiveTab('instructions')}>
-                    Instructions
+                    提示词
                   </button>
                   <button
                     className={cn(
@@ -927,7 +920,7 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-t-lg',
                     )}
                     onClick={() => setActiveTab('settings')}>
-                    Settings
+                    设置
                   </button>
                 </div>
               </div>
@@ -1002,6 +995,16 @@ const Sidebar: React.FC<SidebarProps> = ({ initialPreferences }) => {
           </div>
         </div>
       </div>
+      {!isMinimized && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleToggleMinimize}
+          aria-label="收起侧边栏"
+          className="absolute bottom-4 right-4 z-[70] h-11 w-11 rounded-full border border-slate-200 bg-white/95 shadow-md transition-all duration-200 hover:scale-105 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/95 dark:hover:bg-slate-700">
+          <Icon name="chevron-right" className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+        </Button>
+      )}
     </div>
   );
 };

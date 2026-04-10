@@ -236,7 +236,7 @@ const Settings: React.FC = () => {
       <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-800">
         <CardContent className="p-4">
           <Typography variant="h4" className="mb-4 text-slate-700 dark:text-slate-300">
-            Automation Delay Settings
+            自动化延迟设置
           </Typography>
           
           <div className="space-y-4">
@@ -246,7 +246,7 @@ const Settings: React.FC = () => {
                 htmlFor="auto-insert-delay"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
-                Auto Insert Delay (seconds)
+                自动插入延迟（秒）
               </label>
               <input
                 id="auto-insert-delay"
@@ -263,7 +263,7 @@ const Settings: React.FC = () => {
                 )}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Delay before auto-inserting content
+                自动插入内容前的等待时间
               </p>
             </div>
 
@@ -273,7 +273,7 @@ const Settings: React.FC = () => {
                 htmlFor="auto-submit-delay"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
-                Auto Submit Delay (seconds)
+                自动提交延迟（秒）
               </label>
               <input
                 id="auto-submit-delay"
@@ -290,7 +290,7 @@ const Settings: React.FC = () => {
                 )}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Delay before auto-submitting form
+                自动提交表单前的等待时间
               </p>
             </div>
 
@@ -300,7 +300,7 @@ const Settings: React.FC = () => {
                 htmlFor="auto-execute-delay"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
-                Auto Execute Delay (seconds)
+                自动执行延迟（秒）
               </label>
               <input
                 id="auto-execute-delay"
@@ -317,7 +317,7 @@ const Settings: React.FC = () => {
                 )}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Delay before auto-executing functions
+                自动执行函数前的等待时间
               </p>
             </div>
           </div>
@@ -327,17 +327,17 @@ const Settings: React.FC = () => {
       <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-800">
         <CardContent className="p-4 space-y-4">
           <Typography variant="h4" className="text-slate-700 dark:text-slate-300">
-            Cloud Sync
+            云端同步
           </Typography>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Enable Nutstore Sync
+                  启用坚果云同步
                 </label>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Store prompt files and memory files in Nutstore WebDAV while keeping secrets local.
+                  将提示词和记忆文件保存在坚果云 WebDAV 中，同时把密钥只保留在本地。
                 </p>
               </div>
               <input
@@ -350,7 +350,7 @@ const Settings: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Active Profile ID
+                当前配置档 ID
               </label>
               <input
                 type="text"
@@ -367,7 +367,7 @@ const Settings: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Default Workspace
+                默认工作区
               </label>
               <input
                 type="text"
@@ -384,7 +384,7 @@ const Settings: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Nutstore WebDAV URL
+                坚果云 WebDAV 地址
               </label>
               <input
                 type="text"
@@ -402,7 +402,7 @@ const Settings: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Nutstore Username
+                坚果云用户名
               </label>
               <input
                 type="text"
@@ -419,7 +419,7 @@ const Settings: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Nutstore App Password
+                坚果云应用密码
               </label>
               <input
                 type="password"
@@ -433,13 +433,13 @@ const Settings: React.FC = () => {
                 )}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Stored only in local storage, not in sync storage.
+                仅保存在本地存储中，不会进入同步存储。
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Nutstore Root Path
+                坚果云根目录
               </label>
               <input
                 type="text"
@@ -457,27 +457,27 @@ const Settings: React.FC = () => {
 
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleSaveCloudConfig} disabled={isSavingCloudConfig || isCloudLoading}>
-                {isSavingCloudConfig ? 'Saving...' : 'Save Cloud Config'}
+                {isSavingCloudConfig ? '保存中...' : '保存云端配置'}
               </Button>
               <Button variant="outline" onClick={handleTestConnection} disabled={isTestingConnection || isCloudLoading || !nutstoreEnabled}>
-                {isTestingConnection ? 'Testing...' : 'Test Nutstore'}
+                {isTestingConnection ? '测试中...' : '测试坚果云连接'}
               </Button>
               <Button variant="outline" onClick={handlePullCoreFiles} disabled={isPullingRemote || isCloudLoading || !nutstoreEnabled}>
-                {isPullingRemote ? 'Pulling...' : 'Pull Core Files'}
+                {isPullingRemote ? '拉取中...' : '拉取核心文件'}
               </Button>
               <Button variant="outline" onClick={handlePullGlobalPrompt} disabled={isPullingGlobalPrompt || isCloudLoading || !nutstoreEnabled}>
-                {isPullingGlobalPrompt ? 'Pulling Prompt...' : 'Pull Global Prompt'}
+                {isPullingGlobalPrompt ? '拉取提示词中...' : '拉取全局提示词'}
               </Button>
               <Button variant="outline" onClick={handlePushGlobalPrompt} disabled={isPushingGlobalPrompt || isCloudLoading || !nutstoreEnabled}>
-                {isPushingGlobalPrompt ? 'Pushing Prompt...' : 'Push Global Prompt'}
+                {isPushingGlobalPrompt ? '推送提示词中...' : '推送全局提示词'}
               </Button>
             </div>
 
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-              <div>Last remote sync: {cloudConfig?.sync.syncMeta.lastRemoteSyncAt || 'never'}</div>
-              <div>Last remote pull: {cloudConfig?.sync.syncMeta.lastRemotePullAt || 'never'}</div>
-              <div>Last remote push: {cloudConfig?.sync.syncMeta.lastRemotePushAt || 'never'}</div>
-              <div>Local sync error: {cloudConfig?.local.syncState.lastError || 'none'}</div>
+              <div>上次远程同步：{cloudConfig?.sync.syncMeta.lastRemoteSyncAt || '从未'}</div>
+              <div>上次远程拉取：{cloudConfig?.sync.syncMeta.lastRemotePullAt || '从未'}</div>
+              <div>上次远程推送：{cloudConfig?.sync.syncMeta.lastRemotePushAt || '从未'}</div>
+              <div>本地同步错误：{cloudConfig?.local.syncState.lastError || '无'}</div>
             </div>
 
             {cloudStatus ? (

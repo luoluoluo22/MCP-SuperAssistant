@@ -695,9 +695,9 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
   });
   // Instructions come directly from the global state (managed by Instructions panel in sidebar)
   const [instructions, setInstructions] = useState(instructionsState.instructions || '');
-  const [copyStatus, setCopyStatus] = useState<'Copy' | 'Copied!' | 'Error'>('Copy');
-  const [insertStatus, setInsertStatus] = useState<'Insert' | 'Inserted!' | 'No Adapter' | 'No Content' | 'Failed'>('Insert');
-  const [attachStatus, setAttachStatus] = useState<'Attach' | 'Attached!' | 'No File' |'Not Supported'| 'Error'>('Attach');
+  const [copyStatus, setCopyStatus] = useState<'复制' | '已复制' | '出错'>('复制');
+  const [insertStatus, setInsertStatus] = useState<'插入' | '已插入' | '无适配器' | '无内容' | '失败'>('插入');
+  const [attachStatus, setAttachStatus] = useState<'附加' | '已附加' | '无文件' |'不支持'| '出错'>('附加');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isHoverOverlayVisible, setIsHoverOverlayVisible] = useState(false);
   const [hoverOverlayPosition, setHoverOverlayPosition] = useState({ x: 0, y: 0 });
@@ -861,19 +861,19 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(instructions);
-      setCopyStatus('Copied!');
-      setTimeout(() => setCopyStatus('Copy'), 1200);
+      setCopyStatus('已复制');
+      setTimeout(() => setCopyStatus('复制'), 1200);
     } catch {
-      setCopyStatus('Error');
-      setTimeout(() => setCopyStatus('Copy'), 1200);
+      setCopyStatus('出错');
+      setTimeout(() => setCopyStatus('复制'), 1200);
     }
   };
 
 
   const handleInsert = async () => {
     if (!instructions.trim()) {
-      setInsertStatus('No Content');
-      setTimeout(() => setInsertStatus('Insert'), 1200);
+      setInsertStatus('无内容');
+      setTimeout(() => setInsertStatus('插入'), 1200);
       return;
     }
 
@@ -898,18 +898,18 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
         logger.debug(`Attempting to insert text using ${activePlugin.name} adapter`);
         const success = await insertText(instructions);
         if (success) {
-          setInsertStatus('Inserted!');
+          setInsertStatus('已插入');
           logger.debug(`Text inserted successfully using ${activePlugin.name} adapter`);
         } else {
-          setInsertStatus('Failed');
+          setInsertStatus('失败');
           logger.warn(`Text insertion failed using ${activePlugin.name} adapter`);
         }
       } catch (error) {
         logger.error(`Error inserting text:`, error);
-        setInsertStatus('Failed');
+        setInsertStatus('失败');
       }
     } else {
-      setInsertStatus('No Adapter');
+      setInsertStatus('无适配器');
       logger.warn(`No active adapter available for text insertion. isAdapterActive: ${isAdapterActive}, activePlugin: ${!!activePlugin}, insertText: ${!!insertText}`);
       if (activePlugin) {
         logger.warn(`Active plugin details:`, {
@@ -919,7 +919,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
         });
       }
     }
-    setTimeout(() => setInsertStatus('Insert'), 1200);
+    setTimeout(() => setInsertStatus('插入'), 1200);
   };
 
 
@@ -980,8 +980,8 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
     }
 
     if (!instructions.trim()) {
-      setAttachStatus('No File');
-      setTimeout(() => setAttachStatus('Attach'), 1200);
+      setAttachStatus('无文件');
+      setTimeout(() => setAttachStatus('附加'), 1200);
       return;
     }
 
@@ -993,7 +993,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
 
     if (isAdapterActive && activePlugin && attachFile) {
       if (!activePlugin.capabilities.includes('file-attachment')) {
-      setAttachStatus('Not Supported');
+      setAttachStatus('不支持');
       logger.warn(`File attachment not supported by ${activePlugin.name} adapter`);
       return;
       }
@@ -1008,18 +1008,18 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
       logger.debug(`Attempting to attach file using ${activePlugin.name} adapter`);
       const success = await attachFile(file);
       if (success) {
-        setAttachStatus('Attached!');
+        setAttachStatus('已附加');
         logger.debug(`File attached successfully using ${activePlugin.name} adapter`);
       } else {
-        setAttachStatus('Error');
+        setAttachStatus('出错');
         logger.warn(`File attachment failed using ${activePlugin.name} adapter`);
       }
       } catch (error) {
       logger.error(`Error attaching file:`, error);
-      setAttachStatus('Error');
+      setAttachStatus('出错');
       }
     } else {
-      setAttachStatus('No File');
+      setAttachStatus('无文件');
       logger.warn(`Cannot attach file. isAdapterActive: ${isAdapterActive}, activePlugin: ${!!activePlugin}, attachFile: ${!!attachFile}`);
       if (activePlugin) {
       logger.warn(`Active plugin details:`, {
@@ -1029,7 +1029,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
       });
       }
     }
-    setTimeout(() => setAttachStatus('Attach'), 1200);
+    setTimeout(() => setAttachStatus('附加'), 1200);
   };
 
   // Update hover overlay position
@@ -1184,8 +1184,8 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
       >
         <button
           className={buttonClassName}
-          aria-label={`MCP Settings - ${state.mcpEnabled ? 'Active' : 'Inactive'}`}
-          title={`MCP Settings - ${state.mcpEnabled ? 'Sidebar Visible' : 'Sidebar Hidden'}`}
+          aria-label={`MCP 设置 - ${state.mcpEnabled ? '已启用' : '未启用'}`}
+          title={`MCP 设置 - ${state.mcpEnabled ? '侧边栏可见' : '侧边栏隐藏'}`}
           type="button"
           ref={buttonRef}
           onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
@@ -1208,29 +1208,29 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
           <button
             className="mcp-hover-button"
             onClick={handleInsert}
-            title="Insert instructions"
+            title="插入提示词"
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
               <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
             </svg>
-            Insert
+            插入
           </button>
           <button
             className="mcp-hover-button"
             onClick={handleAttach}
-            title="Attach instructions as file"
+            title="将提示词作为文件附加"
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
               <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
             </svg>
-            Attach
+            附加
           </button>
           <button
             className="mcp-hover-button"
             onClick={handleToggleSidebar}
-            title={isSidebarVisible ? "Hide sidebar" : "Show sidebar"}
+            title={isSidebarVisible ? "隐藏侧边栏" : "显示侧边栏"}
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
@@ -1242,18 +1242,18 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
               )}
             </svg>
-            {isSidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+            {isSidebarVisible ? '隐藏侧边栏' : '显示侧边栏'}
           </button>
           <button
             className="mcp-hover-button"
             onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-            title="Configure MCP settings"
+            title="配置 MCP 设置"
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
               <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
             </svg>
-            Configure
+            设置
           </button>
         </div>,
         document.body
@@ -1278,8 +1278,8 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
           <button
             className="mcp-close-button"
             onClick={() => setIsPopoverOpen(false)}
-            aria-label="Close"
-            title="Close"
+            aria-label="关闭"
+            title="关闭"
             type="button"
             style={{
               color: theme.secondaryText,
@@ -1301,21 +1301,21 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
             <ToggleItem id="mcp-toggle" label="MCP" checked={state.mcpEnabled} disabled={false} onChange={handleMCP} />
             <ToggleItem
               id="auto-insert-toggle"
-              label="Auto Insert"
+              label="自动插入"
               checked={state.autoInsert}
               disabled={autoInsertDisabled}
               onChange={handleAutoInsert}
             />
             <ToggleItem
               id="auto-submit-toggle"
-              label="Auto Submit"
+              label="自动提交"
               checked={state.autoSubmit}
               disabled={autoSubmitDisabled}
               onChange={handleAutoSubmit}
             />
             <ToggleItem
               id="auto-execute-toggle"
-              label="Auto Execute"
+              label="自动执行"
               checked={state.autoExecute}
               disabled={autoExecuteDisabled}
               onChange={handleAutoExecute}
@@ -1342,7 +1342,7 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
                 paddingBottom: 4,
                 borderBottom: `1px solid ${theme.dividerColor}`,
               }}>
-              Instructions
+              提示词
             </div>
             <div
               className="mcp-instructions-container"
@@ -1369,8 +1369,8 @@ export const MCPPopover: React.FC<MCPPopoverProps> = ({ toggleStateManager, adap
                   textAlign: 'center' 
                 }}>
                   {!instructionsState.instructions 
-                    ? 'Loading instructions...' 
-                    : 'Generating instructions...'
+                    ? '正在加载提示词...' 
+                    : '正在生成提示词...'
                   }
                 </div>
               )}
